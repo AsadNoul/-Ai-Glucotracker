@@ -278,13 +278,6 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
                         theme={t}
                     />
                     <ActionItem
-                        icon="edit-calendar"
-                        label="Quick Log"
-                        onPress={() => navigation.navigate('AddLog', { tab: 'carbs' })}
-                        color={t.primary}
-                        theme={t}
-                    />
-                    <ActionItem
                         icon="add"
                         label="Add Glucose"
                         color={t.primary}
@@ -294,10 +287,47 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
                     />
                     <ActionItem
                         icon="history"
-                        label="View History"
+                        label="Logbook"
                         color={t.primary}
                         theme={t}
-                        onPress={() => navigation.navigate('Insights')}
+                        onPress={() => navigation.navigate('Logbook')}
+                    />
+                    <ActionItem
+                        icon="pill"
+                        label="Medications"
+                        color="#7B61FF"
+                        theme={t}
+                        onPress={() => navigation.navigate('Medication')}
+                    />
+                </View>
+                <View style={styles.actionsGrid}>
+                    <ActionItem
+                        icon="run"
+                        label="Activity"
+                        color="#4CAF50"
+                        theme={t}
+                        onPress={() => navigation.navigate('Activity')}
+                    />
+                    <ActionItem
+                        icon="emoticon-happy"
+                        label="Wellness"
+                        color="#FF9800"
+                        theme={t}
+                        onPress={() => navigation.navigate('Mood')}
+                    />
+                    <ActionItem
+                        icon="book-open-variant"
+                        label="Learn"
+                        color="#00BCD4"
+                        theme={t}
+                        onPress={() => navigation.navigate('Education')}
+                    />
+                    <ActionItem
+                        icon="alert-circle"
+                        label="Emergency"
+                        color="#FF1744"
+                        theme={t}
+                        onPress={() => navigation.navigate('Emergency')}
                     />
                 </View>
             </ScrollView>

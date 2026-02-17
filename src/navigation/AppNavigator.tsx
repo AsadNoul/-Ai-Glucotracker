@@ -12,6 +12,12 @@ import { InsightsScreen } from '../screens/InsightsScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { CreditsStoreScreen } from '../screens/CreditsStoreScreen';
 import { ScanMealScreen } from '../screens/ScanMealScreen';
+import { LogbookScreen } from '../screens/LogbookScreen';
+import { MedicationScreen } from '../screens/MedicationScreen';
+import { ActivityScreen } from '../screens/ActivityScreen';
+import { MoodScreen } from '../screens/MoodScreen';
+import { EducationScreen } from '../screens/EducationScreen';
+import { EmergencyScreen } from '../screens/EmergencyScreen';
 import { Colors, Shadow, getThemeColors } from '../constants/Theme';
 import { useSettingsStore } from '../store';
 
@@ -106,6 +112,13 @@ export const AppNavigator = () => {
             <Stack.Screen name="MainTabs" component={MainTabs} />
             <Stack.Screen name="CreditsStore" component={CreditsStoreScreen} />
             <Stack.Screen name="ScanMeal" component={ScanMealScreen} options={{ animation: 'fade_from_bottom' }} />
+            <Stack.Screen name="Logbook" component={LogbookScreen} />
+            <Stack.Screen name="Medication" component={MedicationScreen} />
+            <Stack.Screen name="Activity" component={ActivityScreen} />
+            <Stack.Screen name="Mood" component={MoodScreen} />
+            <Stack.Screen name="Education" component={EducationScreen} />
+            <Stack.Screen name="Emergency" component={EmergencyScreen} />
         </Stack.Navigator>
     );
 };
+

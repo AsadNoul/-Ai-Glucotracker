@@ -110,6 +110,14 @@ export const useSubscriptionStore = create<SubscriptionState>()(
     )
 );
 
+// ─── Emergency Contact ──────────────────────────────────────────────
+export interface EmergencyContact {
+    id: string;
+    name: string;
+    phone: string;
+    relationship: string;
+}
+
 interface SettingsState {
     notificationsEnabled: boolean;
     theme: 'light' | 'dark';
@@ -128,6 +136,8 @@ interface SettingsState {
     reminderMealEnabled: boolean;
     reminderGlucoseEnabled: boolean;
     reminderWaterEnabled: boolean;
+    // Emergency
+    emergencyContacts: EmergencyContact[];
     // Setters
     setNotifications: (enabled: boolean) => void;
     setTheme: (theme: 'light' | 'dark') => void;
@@ -140,6 +150,8 @@ interface SettingsState {
     setAge: (age: number) => void;
     setWeight: (weight: number, unit: 'kg' | 'lbs') => void;
     setReminder: (key: 'reminderMealEnabled' | 'reminderGlucoseEnabled' | 'reminderWaterEnabled', value: boolean) => void;
+    addEmergencyContact: (contact: EmergencyContact) => void;
+    removeEmergencyContact: (id: string) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -160,6 +172,7 @@ export const useSettingsStore = create<SettingsState>()(
             reminderMealEnabled: false,
             reminderGlucoseEnabled: false,
             reminderWaterEnabled: false,
+            emergencyContacts: [],
             setNotifications: (enabled) => set({ notificationsEnabled: enabled }),
             setTheme: (theme) => set({ theme }),
             setGlucoseUnit: (unit) => set({ glucoseUnit: unit }),
@@ -171,9 +184,150 @@ export const useSettingsStore = create<SettingsState>()(
             setAge: (age) => set({ age }),
             setWeight: (weight, unit) => set({ weight, weightUnit: unit }),
             setReminder: (key, value) => set({ [key]: value }),
+            addEmergencyContact: (contact) => set((state) => ({
+                emergencyContacts: [...state.emergencyContacts, contact]
+            })),
+            removeEmergencyContact: (id) => set((state) => ({
+                emergencyContacts: state.emergencyContacts.filter(c => c.id !== id)
+            })),
         }),
         {
             name: 'settings-storage',
+            storage: createJSONStorage(() => AsyncStorage),
+        }
+    )
+);
+
+// ─── Medication Store ───────────────────────────────────────────────
+export interface Medication {
+    id: string;
+    name: string;
+    dosage: string;
+    frequency: string;
+    type: 'oral' | 'injection' | 'insulin' | 'supplement' | 'other';
+    timeOfDay: string[];
+    notes?: string;
+    active: boolean;
+    createdAt: string;
+}
+
+export interface MedicationLog {
+    id: string;
+    medicationId: string;
+    medicationName: string;
+    dosage: string;
+    taken: boolean;
+    takenAt: string;
+    skippedReason?: string;
+}
+
+interface MedicationState {
+    medications: Medication[];
+    medicationLogs: MedicationLog[];
+    addMedication: (med: Medication) => void;
+    removeMedication: (id: string) => void;
+    toggleMedication: (id: string) => void;
+    addMedicationLog: (log: MedicationLog) => void;
+}
+
+export const useMedicationStore = create<MedicationState>()(
+    persist(
+        (set) => ({
+            medications: [],
+            medicationLogs: [],
+            addMedication: (med) => set((state) => ({
+                medications: [...state.medications, med]
+            })),
+            removeMedication: (id) => set((state) => ({
+                medications: state.medications.filter(m => m.id !== id)
+            })),
+            toggleMedication: (id) => set((state) => ({
+                medications: state.medications.map(m =>
+                    m.id === id ? { ...m, active: !m.active } : m
+                )
+            })),
+            addMedicationLog: (log) => set((state) => ({
+                medicationLogs: [log, ...state.medicationLogs]
+            })),
+        }),
+        {
+            name: 'medication-storage',
+            storage: createJSONStorage(() => AsyncStorage),
+        }
+    )
+);
+
+// ─── Activity Store ─────────────────────────────────────────────────
+export interface ActivityLog {
+    id: string;
+    type: string;
+    emoji: string;
+    duration: number; // minutes
+    intensity: 'light' | 'moderate' | 'vigorous';
+    caloriesBurned: number;
+    notes?: string;
+    glucoseBefore?: number;
+    glucoseAfter?: number;
+    createdAt: string;
+}
+
+interface ActivityState {
+    activityLogs: ActivityLog[];
+    addActivity: (log: ActivityLog) => void;
+    removeActivity: (id: string) => void;
+}
+
+export const useActivityStore = create<ActivityState>()(
+    persist(
+        (set) => ({
+            activityLogs: [],
+            addActivity: (log) => set((state) => ({
+                activityLogs: [log, ...state.activityLogs]
+            })),
+            removeActivity: (id) => set((state) => ({
+                activityLogs: state.activityLogs.filter(a => a.id !== id)
+            })),
+        }),
+        {
+            name: 'activity-storage',
+            storage: createJSONStorage(() => AsyncStorage),
+        }
+    )
+);
+
+// ─── Mood Store ─────────────────────────────────────────────────────
+export interface MoodEntry {
+    id: string;
+    mood: 'great' | 'good' | 'okay' | 'low' | 'bad';
+    emoji: string;
+    energyLevel: number; // 1-5
+    stressLevel: number; // 1-5
+    sleepQuality: number; // 1-5
+    symptoms: string[];
+    notes?: string;
+    glucoseAtTime?: number;
+    createdAt: string;
+}
+
+interface MoodState {
+    moodEntries: MoodEntry[];
+    addMoodEntry: (entry: MoodEntry) => void;
+    removeMoodEntry: (id: string) => void;
+}
+
+export const useMoodStore = create<MoodState>()(
+    persist(
+        (set) => ({
+            moodEntries: [],
+            addMoodEntry: (entry) => set((state) => ({
+                moodEntries: [entry, ...state.moodEntries]
+            })),
+            removeMoodEntry: (id) => set((state) => ({
+                moodEntries: state.moodEntries.filter(e => e.id !== id)
+            })),
+        }),
+        {
+            name: 'mood-storage',
             storage: createJSONStorage(() => AsyncStorage),
         }
     )

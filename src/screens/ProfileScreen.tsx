@@ -292,6 +292,23 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                     </SettingRow>
                 </View>
 
+                {/* Tools & Features */}
+                <Text style={[styles.sectionTitle, { color: t.textTertiary }]}>🛠️ TOOLS & FEATURES</Text>
+                <View style={[styles.settingsGroup, { backgroundColor: t.card, borderColor: t.border }, Shadow.light]}>
+                    <SettingRow icon="book" label="Logbook" value="Timeline" color="#2196F3"
+                        onPress={() => navigation.navigate('Logbook')} />
+                    <SettingRow icon="medical" label="Medications" value="Track doses" color="#7B61FF"
+                        onPress={() => navigation.navigate('Medication')} />
+                    <SettingRow icon="fitness" label="Activity Tracker" value="Exercise" color="#4CAF50"
+                        onPress={() => navigation.navigate('Activity')} />
+                    <SettingRow icon="happy" label="Mood & Wellness" value="Check-in" color="#FF9800"
+                        onPress={() => navigation.navigate('Mood')} />
+                    <SettingRow icon="school" label="Learning Hub" value="Articles" color="#00BCD4"
+                        onPress={() => navigation.navigate('Education')} />
+                    <SettingRow icon="alert-circle" label="Emergency" value="SOS" color="#FF1744"
+                        onPress={() => navigation.navigate('Emergency')} isLast />
+                </View>
+
                 {/* Membership */}
                 <Text style={[styles.sectionTitle, { color: t.textTertiary }]}>👑 MEMBERSHIP</Text>
                 <View style={[styles.settingsGroup, { backgroundColor: t.card, borderColor: t.border }, Shadow.light]}>
