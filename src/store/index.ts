@@ -119,6 +119,16 @@ interface SettingsState {
     waterGoal: number;
     waterIntake: number;
     carbGoal: number;
+    // Health profile
+    diabetesType: 'type1' | 'type2' | 'gestational' | 'prediabetes' | 'none';
+    age: number;
+    weight: number;
+    weightUnit: 'kg' | 'lbs';
+    // Reminders
+    reminderMealEnabled: boolean;
+    reminderGlucoseEnabled: boolean;
+    reminderWaterEnabled: boolean;
+    // Setters
     setNotifications: (enabled: boolean) => void;
     setTheme: (theme: 'light' | 'dark') => void;
     setGlucoseUnit: (unit: 'mg/dL' | 'mmol/L') => void;
@@ -126,6 +136,10 @@ interface SettingsState {
     addWater: (ml: number) => void;
     resetWater: () => void;
     setCarbGoal: (goal: number) => void;
+    setDiabetesType: (type: 'type1' | 'type2' | 'gestational' | 'prediabetes' | 'none') => void;
+    setAge: (age: number) => void;
+    setWeight: (weight: number, unit: 'kg' | 'lbs') => void;
+    setReminder: (key: 'reminderMealEnabled' | 'reminderGlucoseEnabled' | 'reminderWaterEnabled', value: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -139,6 +153,13 @@ export const useSettingsStore = create<SettingsState>()(
             waterGoal: 2000,
             waterIntake: 0,
             carbGoal: 150,
+            diabetesType: 'none',
+            age: 0,
+            weight: 0,
+            weightUnit: 'kg',
+            reminderMealEnabled: false,
+            reminderGlucoseEnabled: false,
+            reminderWaterEnabled: false,
             setNotifications: (enabled) => set({ notificationsEnabled: enabled }),
             setTheme: (theme) => set({ theme }),
             setGlucoseUnit: (unit) => set({ glucoseUnit: unit }),
@@ -146,6 +167,10 @@ export const useSettingsStore = create<SettingsState>()(
             addWater: (ml) => set((state) => ({ waterIntake: state.waterIntake + ml })),
             resetWater: () => set({ waterIntake: 0 }),
             setCarbGoal: (goal) => set({ carbGoal: goal }),
+            setDiabetesType: (type) => set({ diabetesType: type }),
+            setAge: (age) => set({ age }),
+            setWeight: (weight, unit) => set({ weight, weightUnit: unit }),
+            setReminder: (key, value) => set({ [key]: value }),
         }),
         {
             name: 'settings-storage',
