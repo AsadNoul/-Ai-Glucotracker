@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Report Preview - Diabetes Management</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for better mobile feel */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#111418]">
+<!-- Main Container (Phone Form Factor) -->
+<div class="relative flex h-screen w-full flex-col overflow-hidden max-w-md mx-auto bg-white border-x border-gray-200">
+<!-- Header / Navigation Bar -->
+<header class="flex items-center bg-white dark:bg-background-dark border-b border-gray-100 p-4 justify-between sticky top-0 z-10">
+<button class="text-[#111418] flex size-10 items-center justify-center hover:bg-gray-50 rounded-full">
+<span class="material-symbols-outlined">close</span>
+</button>
+<h2 class="text-[#111418] text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">Report Preview</h2>
+<div class="flex w-10 items-center justify-end">
+<button class="text-primary hover:bg-primary/10 size-10 flex items-center justify-center rounded-full">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+</header>
+<!-- Scrollable Content Area -->
+<main class="flex-1 overflow-y-auto bg-background-light p-4 space-y-6 pb-40">
+<!-- Report Document Canvas -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+<!-- Document Header -->
+<div class="p-6 border-b border-gray-100 bg-gray-50/50">
+<div class="flex justify-between items-start mb-4">
+<div class="flex flex-col gap-1">
+<span class="text-xs font-bold text-primary tracking-widest uppercase">Clinical Export</span>
+<h1 class="text-xl font-bold text-[#111418]">Diabetes Management Summary</h1>
+</div>
+<div class="bg-primary/10 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary text-3xl">medical_services</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 text-sm">
+<div>
+<p class="text-gray-500">Patient Name</p>
+<p class="font-semibold text-[#111418]">Johnathan Doe</p>
+</div>
+<div>
+<p class="text-gray-500">Reporting Period</p>
+<p class="font-semibold text-[#111418]">Oct 1 - Oct 7, 2023</p>
+</div>
+</div>
+</div>
+<!-- Metrics Grid -->
+<div class="p-6 grid grid-cols-3 gap-2 border-b border-gray-100">
+<div class="flex flex-col items-center p-2 bg-green-50 rounded-lg">
+<span class="text-[10px] uppercase font-bold text-green-700">Time In Range</span>
+<span class="text-lg font-bold text-green-800">84%</span>
+</div>
+<div class="flex flex-col items-center p-2 bg-blue-50 rounded-lg">
+<span class="text-[10px] uppercase font-bold text-blue-700">Avg Glucose</span>
+<span class="text-lg font-bold text-blue-800">114</span>
+</div>
+<div class="flex flex-col items-center p-2 bg-orange-50 rounded-lg">
+<span class="text-[10px] uppercase font-bold text-orange-700">Carbs Avg</span>
+<span class="text-lg font-bold text-orange-800">165g</span>
+</div>
+</div>
+<!-- Glucose Trend Chart Section -->
+<div class="p-6">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-bold text-[#111418]">Weekly Glucose Trend</h3>
+<span class="text-[10px] font-medium text-gray-400">Values in mg/dL</span>
+</div>
+<div class="relative h-48 w-full">
+<!-- Simulated Chart Grid -->
+<div class="absolute inset-0 flex flex-col justify-between opacity-10 pointer-events-none">
+<div class="border-t border-gray-900 w-full"></div>
+<div class="border-t border-gray-900 w-full"></div>
+<div class="border-t border-gray-900 w-full"></div>
+<div class="border-t border-gray-900 w-full"></div>
+</div>
+<!-- Target Range Shading -->
+<div class="absolute top-[30%] bottom-[30%] left-0 right-0 bg-green-500/5 border-y border-green-500/10"></div>
+<!-- SVG Line Graph -->
+<svg class="absolute inset-0 w-full h-full" preserveaspectratio="none" viewbox="0 0 400 150">
+<defs>
+<lineargradient id="gradient" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#137fec" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#137fec" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0,100 Q40,40 80,80 T160,60 T240,110 T320,50 T400,90 L400,150 L0,150 Z" fill="url(#gradient)"></path>
+<path d="M0,100 Q40,40 80,80 T160,60 T240,110 T320,50 T400,90" fill="none" stroke="#137fec" stroke-linecap="round" stroke-width="3"></path>
+<!-- Key Data Points -->
+<circle cx="80" cy="80" fill="white" r="4" stroke="#137fec" stroke-width="2"></circle>
+<circle cx="240" cy="110" fill="white" r="4" stroke="#137fec" stroke-width="2"></circle>
+<circle cx="320" cy="50" fill="white" r="4" stroke="#137fec" stroke-width="2"></circle>
+</svg>
+</div>
+<!-- Weekday Labels -->
+<div class="flex justify-between mt-4 px-1">
+<span class="text-[10px] font-bold text-gray-400">MON</span>
+<span class="text-[10px] font-bold text-gray-400">TUE</span>
+<span class="text-[10px] font-bold text-gray-400">WED</span>
+<span class="text-[10px] font-bold text-gray-400">THU</span>
+<span class="text-[10px] font-bold text-gray-400">FRI</span>
+<span class="text-[10px] font-bold text-gray-400">SAT</span>
+<span class="text-[10px] font-bold text-gray-400">SUN</span>
+</div>
+</div>
+<!-- Daily Summary Table -->
+<div class="px-6 pb-6">
+<h3 class="text-sm font-bold text-[#111418] mb-3">Daily Breakdown</h3>
+<div class="overflow-hidden border border-gray-100 rounded-lg">
+<table class="w-full text-left text-xs">
+<thead class="bg-gray-50 text-gray-500 font-bold">
+<tr>
+<th class="p-3">Date</th>
+<th class="p-3">Avg (mg/dL)</th>
+<th class="p-3">Carbs (g)</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-50">
+<tr>
+<td class="p-3 font-medium">Oct 07, Sat</td>
+<td class="p-3 text-blue-600 font-bold">112</td>
+<td class="p-3 text-gray-600">145g</td>
+</tr>
+<tr>
+<td class="p-3 font-medium">Oct 06, Fri</td>
+<td class="p-3 text-blue-600 font-bold">118</td>
+<td class="p-3 text-gray-600">182g</td>
+</tr>
+<tr>
+<td class="p-3 font-medium">Oct 05, Thu</td>
+<td class="p-3 text-orange-600 font-bold">135</td>
+<td class="p-3 text-gray-600">210g</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Report Status Tag -->
+<div class="flex items-center justify-center gap-2 py-4">
+<span class="material-symbols-outlined text-gray-400 text-sm">lock</span>
+<p class="text-xs text-gray-500">Medical data encrypted and HIPAA compliant</p>
+</div>
+</main>
+<!-- Fixed Bottom Actions -->
+<div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-gray-100 p-4 pb-8 space-y-3 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+<button class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 bg-primary text-white gap-3 text-base font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined">send</span>
+<span>Share with Doctor</span>
+</button>
+<button class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-14 bg-primary/10 text-primary gap-3 text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/20 transition-all">
+<span class="material-symbols-outlined">download</span>
+<span>Download PDF</span>
+</button>
+</div>
+</div>
+<!-- Bottom Nav Bar (Hidden in preview mode, but present in context) -->
+<div class="fixed bottom-0 w-full max-w-md mx-auto hidden">
+<div class="flex gap-2 border-t border-[#f0f2f4] bg-white px-4 pb-3 pt-2">
+<a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#617589]" href="#">
+<div class="text-[#617589] flex h-8 items-center justify-center">
+<span class="material-symbols-outlined">home</span>
+</div>
+<p class="text-xs font-medium">Home</p>
+</a>
+<a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#617589]" href="#">
+<div class="text-[#617589] flex h-8 items-center justify-center">
+<span class="material-symbols-outlined">history_edu</span>
+</div>
+<p class="text-xs font-medium">Logs</p>
+</a>
+<a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#111418]" href="#">
+<div class="text-[#111418] flex h-8 items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">description</span>
+</div>
+<p class="text-xs font-medium">Reports</p>
+</a>
+<a class="just flex flex-1 flex-col items-center justify-end gap-1 text-[#617589]" href="#">
+<div class="text-[#617589] flex h-8 items-center justify-center">
+<span class="material-symbols-outlined">settings</span>
+</div>
+<p class="text-xs font-medium">Settings</p>
+</a>
+</div>
+</div>
+</body></html>

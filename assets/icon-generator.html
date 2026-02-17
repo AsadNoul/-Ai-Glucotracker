@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GlucoTrack AI Icon Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: #fff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .icon-preview {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+        .preview-card {
+            text-align: center;
+        }
+        .preview-label {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #888;
+        }
+        canvas {
+            border-radius: 20%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .download-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #0a85ff, #137fec);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            text-decoration: none;
+        }
+        .download-btn:hover {
+            opacity: 0.9;
+        }
+        .buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .instructions {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🩸 GlucoTrack AI - Icon Generator</h1>
+        
+        <div class="icon-preview">
+            <div class="preview-card">
+                <canvas id="icon512" width="512" height="512"></canvas>
+                <div class="preview-label">App Icon (512x512)</div>
+            </div>
+            <div class="preview-card">
+                <canvas id="icon1024" width="256" height="256"></canvas>
+                <div class="preview-label">Preview (1024x1024)</div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="download-btn" onclick="downloadIcon('icon512', 'icon-512.png')">
+                Download 512x512
+            </button>
+            <button class="download-btn" onclick="downloadIcon('icon1024', 'icon-1024.png')">
+                Download 1024x1024
+            </button>
+        </div>
+
+        <div class="instructions">
+            <h3>📌 Instructions:</h3>
+            <ol>
+                <li>Click the download buttons above to save the icons</li>
+                <li>Rename downloaded files:
+                    <ul>
+                        <li><code>icon-1024.png</code> → <code>icon.png</code></li>
+                        <li><code>icon-512.png</code> → <code>adaptive-icon.png</code></li>
+                    </ul>
+                </li>
+                <li>Place them in the <code>assets/</code> folder</li>
+                <li>Reload your Expo app</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Background
+            const bgGradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+            bgGradient.addColorStop(0, '#1a2332');
+            bgGradient.addColorStop(1, '#0f1923');
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Draw blood drop shape
+            ctx.save();
+            ctx.translate(size/2, size/2.2);
+            ctx.scale(size/200, size/200);
+            
+            // Drop path
+            ctx.beginPath();
+            ctx.moveTo(0, -50);
+            ctx.bezierCurveTo(-35, -30, -50, 0, -50, 25);
+            ctx.bezierCurveTo(-50, 55, -25, 75, 0, 75);
+            ctx.bezierCurveTo(25, 75, 50, 55, 50, 25);
+            ctx.bezierCurveTo(50, 0, 35, -30, 0, -50);
+            ctx.closePath();
+            
+            // Gradient fill
+            const dropGradient = ctx.createLinearGradient(0, -50, 0, 75);
+            dropGradient.addColorStop(0, '#0a85ff');
+            dropGradient.addColorStop(0.5, '#137fec');
+            dropGradient.addColorStop(1, '#0c6fd9');
+            ctx.fillStyle = dropGradient;
+            ctx.fill();
+            
+            // Highlight
+            ctx.beginPath();
+            ctx.arc(-15, -20, 15, 0, Math.PI * 2);
+            const highlightGradient = ctx.createRadialGradient(-15, -20, 0, -15, -20, 15);
+            highlightGradient.addColorStop(0, 'rgba(255,255,255,0.5)');
+            highlightGradient.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = highlightGradient;
+            ctx.fill();
+            
+            // Medical cross inside
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.fillRect(-4, -15, 8, 30);
+            ctx.fillRect(-15, -4, 30, 8);
+            
+            // Heartbeat line
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(-30, 10);
+            ctx.lineTo(-20, 10);
+            ctx.lineTo(-15, -5);
+            ctx.lineTo(-10, 20);
+            ctx.lineTo(-5, 10);
+            ctx.lineTo(5, 10);
+            ctx.lineTo(10, 0);
+            ctx.lineTo(15, 15);
+            ctx.lineTo(20, 10);
+            ctx.lineTo(30, 10);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        // Draw both sizes
+        drawIcon(document.getElementById('icon512'), 512);
+        drawIcon(document.getElementById('icon1024'), 1024);
+
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>

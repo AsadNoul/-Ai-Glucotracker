@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Local Food Explorer - Carb Tracker</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f27f0d",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#221910",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white selection:bg-primary/30">
+<div class="relative flex h-screen max-w-[430px] mx-auto flex-col bg-background-light dark:bg-background-dark overflow-hidden shadow-2xl border-x border-primary/10">
+<!-- Header -->
+<header class="pt-12 px-6 pb-4 bg-background-light dark:bg-background-dark/95 backdrop-blur-md sticky top-0 z-20">
+<div class="flex items-center justify-between mb-6">
+<button class="w-10 h-10 rounded-full glass-card flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">arrow_back_ios_new</span>
+</button>
+<h1 class="text-xl font-bold tracking-tight text-primary">Food Explorer</h1>
+<button class="w-10 h-10 rounded-full glass-card flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">history</span>
+</button>
+</div>
+<!-- Search Bar -->
+<div class="relative group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-primary/60 group-focus-within:text-primary transition-colors">search</span>
+</div>
+<input class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary focus:outline-none transition-all placeholder:text-white/30" placeholder="Search regional specialties (e.g. Biryani)" type="text"/>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto hide-scrollbar px-6 pb-32">
+<!-- Filter Chips -->
+<div class="flex gap-3 overflow-x-auto hide-scrollbar py-4 -mx-2 px-2">
+<button class="flex-none px-6 py-2 rounded-full bg-primary text-white font-semibold text-sm shadow-lg shadow-primary/20">All Meals</button>
+<button class="flex-none px-6 py-2 rounded-full glass-card text-white/70 font-medium text-sm hover:bg-white/10 transition-colors">Breakfast</button>
+<button class="flex-none px-6 py-2 rounded-full glass-card text-white/70 font-medium text-sm hover:bg-white/10 transition-colors">Lunch</button>
+<button class="flex-none px-6 py-2 rounded-full glass-card text-white/70 font-medium text-sm hover:bg-white/10 transition-colors">Dinner</button>
+<button class="flex-none px-6 py-2 rounded-full glass-card text-white/70 font-medium text-sm hover:bg-white/10 transition-colors">Snacks</button>
+</div>
+<!-- Section Title -->
+<div class="flex items-center justify-between mt-4 mb-4">
+<h2 class="text-lg font-bold">Regional Favorites</h2>
+<span class="text-xs text-primary font-medium bg-primary/10 px-3 py-1 rounded-full">348 Found</span>
+</div>
+<!-- Food Cards Grid -->
+<div class="grid grid-cols-1 gap-4">
+<!-- Card 1: Biryani -->
+<div class="glass-card rounded-[18px] p-4 flex gap-4 hover:bg-white/10 transition-all cursor-pointer">
+<div class="relative w-24 h-24 rounded-2xl overflow-hidden shrink-0">
+<img alt="Chicken Biryani" class="w-full h-full object-cover" data-alt="A steaming bowl of aromatic chicken biryani" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLEJx5D7OrHzT0E2cXjCCtSJyPDZeRby8_KQBXFjE9JrcQWE8MGi31ggeiQzxCBXSpDvJYgveU9Bjct2NxG9H8NPF8TdpzEYo_n4EOdgjrYeTW9kX18Lqt98RWsxNhYvZzW0r-_uTmw1Mx-YOuvysYl3hz20unb4XwY3R1TD58MsdNU4tekVC0NNjad25Wmww1DWzysPnYfNDrbuNc6jhecLO7F3GjerSTmnRV-WytJ0CoElgzT4uQ39IFzs1ZOPUd5ssXik-RYrvq"/>
+<div class="absolute top-1 left-1 bg-green-500/90 backdrop-blur-md p-1 rounded-full">
+<span class="material-symbols-outlined text-[10px] text-white font-bold">verified</span>
+</div>
+</div>
+<div class="flex flex-col justify-between flex-1 py-1">
+<div>
+<div class="flex items-start justify-between">
+<h3 class="font-bold text-base leading-tight">Chicken Biryani</h3>
+<span class="text-primary font-extrabold text-lg">54g <span class="text-[10px] text-white/40 font-normal block text-right">CARBS</span></span>
+</div>
+<div class="flex items-center gap-1 mt-1">
+<span class="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-white/60 font-medium uppercase tracking-wider">Community Verified</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-[11px] text-white/40">
+<span>Per 300g serving</span>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-xs">trending_up</span>
+<span class="font-bold">High GI</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: Butter Naan -->
+<div class="glass-card rounded-[18px] p-4 flex gap-4 hover:bg-white/10 transition-all cursor-pointer">
+<div class="relative w-24 h-24 rounded-2xl overflow-hidden shrink-0">
+<img alt="Butter Naan" class="w-full h-full object-cover" data-alt="Fresh garlic butter naan bread in a basket" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMs2kqNw_f3StxL0wH7J1gt2zRw8tfeVv1FEMBzWWEudNP50q4oz1fl5EjetCinw8mYaN-JYU2QZV6MTGCvTFoD_hYUeRgAlTJaiU0M6IX0OQU_CAFoNOOIxzNNn39MMcLEoxYQ6Gk_DllPNzk-aeeyhJH5cDHF3gzjcGEOVUccJayJdQvrwf-5z_mmTYLnc56LVX91BtUI9W8ZUGA4uedpK3JdE579kX5lmaq3kP7uwz4EWUbXyF00BeifnNqKPK8SQyM7RnG2Mjq"/>
+</div>
+<div class="flex flex-col justify-between flex-1 py-1">
+<div>
+<div class="flex items-start justify-between">
+<h3 class="font-bold text-base leading-tight">Butter Naan</h3>
+<span class="text-primary font-extrabold text-lg">42g <span class="text-[10px] text-white/40 font-normal block text-right">CARBS</span></span>
+</div>
+<div class="flex items-center gap-1 mt-1">
+<span class="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-white/60 font-medium uppercase tracking-wider">1 Large Piece</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-[11px] text-white/40">
+<span>User Submitted</span>
+<div class="flex items-center gap-1 text-yellow-500">
+<span class="material-symbols-outlined text-xs">trending_flat</span>
+<span class="font-bold">Medium GI</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3: Paneer Paratha -->
+<div class="glass-card rounded-[18px] p-4 flex gap-4 hover:bg-white/10 transition-all cursor-pointer border-l-4 border-l-primary/40">
+<div class="relative w-24 h-24 rounded-2xl overflow-hidden shrink-0">
+<img alt="Paneer Paratha" class="w-full h-full object-cover" data-alt="Stuffed paneer paratha with a dollop of butter" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVghXtSjCFjX7OnLYzrJVQZs_lfbPszn-N-PNXiWwt9nZ01gO3ApPGjcf2ZEcI3IsijTmAjy29VRReGhRGhM2R0dgX7iXT39jTf2TpxGJ1ynZTKpfcInCT3XAJ2dUTALxeKHnGUPxzRtwh6KWBd-YAMMPCtoFbpwNsOGwPYGn-IhalcObm0qjvElEfJwxrSL-qqjjImm7Vf1rQjJQsRn5z9P0xPt8xr1GJ3o9e8gltUqN9VHxfa52XUJT-3MzQPSyDxRQLKnPGZrZu"/>
+<div class="absolute top-1 left-1 bg-green-500/90 backdrop-blur-md p-1 rounded-full">
+<span class="material-symbols-outlined text-[10px] text-white font-bold">verified</span>
+</div>
+</div>
+<div class="flex flex-col justify-between flex-1 py-1">
+<div>
+<div class="flex items-start justify-between">
+<h3 class="font-bold text-base leading-tight">Paneer Paratha</h3>
+<span class="text-primary font-extrabold text-lg">38g <span class="text-[10px] text-white/40 font-normal block text-right">CARBS</span></span>
+</div>
+<div class="flex items-center gap-1 mt-1">
+<span class="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-white/60 font-medium uppercase tracking-wider">Community Verified</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-[11px] text-white/40">
+<span>Per 150g serving</span>
+<div class="flex items-center gap-1 text-green-500">
+<span class="material-symbols-outlined text-xs">trending_down</span>
+<span class="font-bold">Low GI</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4: Masala Dosa -->
+<div class="glass-card rounded-[18px] p-4 flex gap-4 hover:bg-white/10 transition-all cursor-pointer">
+<div class="relative w-24 h-24 rounded-2xl overflow-hidden shrink-0">
+<img alt="Masala Dosa" class="w-full h-full object-cover" data-alt="Crispy south indian masala dosa with chutney" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZ5WD8xt8w4_T7h6SoED4FNKhfdb5YFlJzt2HoDXWPfJBY3BP20NK5SA9_Ncenn449ntcpWwl0L4gGms417rWlpmA66Majm5RfljOoM5MVMsc2-FijMbgLvNsAF9ArBqs693tl__GeOfTdtW9ixxbDB0WKt951HjftTFORB68w2VsACbik5QKT1JXCXp1UqlSu9b99rUXjw8hRGNBGzqjHXIng2maFVmnakgyojrC5TcnQX2ZtfdLfFyxx57XvyBY8GkGrPCrwM6kw"/>
+</div>
+<div class="flex flex-col justify-between flex-1 py-1">
+<div>
+<div class="flex items-start justify-between">
+<h3 class="font-bold text-base leading-tight">Masala Dosa</h3>
+<span class="text-primary font-extrabold text-lg">48g <span class="text-[10px] text-white/40 font-normal block text-right">CARBS</span></span>
+</div>
+<div class="flex items-center gap-1 mt-1">
+<span class="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-white/60 font-medium uppercase tracking-wider">With Sambar</span>
+</div>
+</div>
+<div class="flex items-center justify-between text-[11px] text-white/40">
+<span>User Submitted</span>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-xs">trending_up</span>
+<span class="font-bold">High GI</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="absolute bottom-28 right-6 w-14 h-14 rounded-full bg-primary text-white shadow-2xl shadow-primary/40 flex items-center justify-center z-30 ring-4 ring-background-dark">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+<!-- Bottom Navigation Bar -->
+<nav class="absolute bottom-0 left-0 right-0 bg-background-dark/80 backdrop-blur-xl border-t border-white/5 px-6 pb-8 pt-4 flex justify-between items-center z-40">
+<a class="flex flex-col items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-white/40 group-hover:text-primary transition-colors">home</span>
+<span class="text-[10px] font-medium text-white/40 group-hover:text-primary">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-primary">explore</span>
+<span class="text-[10px] font-medium text-primary">Explorer</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="relative">
+<span class="material-symbols-outlined text-white/40 group-hover:text-primary transition-colors">monitoring</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full ring-2 ring-background-dark"></span>
+</div>
+<span class="text-[10px] font-medium text-white/40 group-hover:text-primary">Insights</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-white/40 group-hover:text-primary transition-colors">person</span>
+<span class="text-[10px] font-medium text-white/40 group-hover:text-primary">Profile</span>
+</a>
+</nav>
+<!-- iOS Home Indicator -->
+<div class="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1.5 bg-white/20 rounded-full z-50"></div>
+</div>
+</body></html>

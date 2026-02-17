@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "GlucoTrack AI",
+    "slug": "glucotrack-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "glucotrack",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0B0F"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.glucotrack.ai",
+      "infoPlist": {
+        "NSCameraUsageDescription": "GlucoTrack AI needs camera access to scan food for carb estimation",
+        "NSPhotoLibraryUsageDescription": "GlucoTrack AI needs photo library access to select food images",
+        "NSMicrophoneUsageDescription": "GlucoTrack AI needs microphone access for voice notes"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0B0F"
+      },
+      "package": "com.glucotrack.ai",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "POST_NOTIFICATIONS"
+      ],
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow GlucoTrack AI to access your photos to scan food"
+        }
+      ],
+      "expo-asset"
+    ],
+    "notification": {
+      "icon": "./assets/notification-icon.png",
+      "color": "#4A90FF",
+      "androidMode": "default",
+      "androidCollapsedTitle": "GlucoTrack AI"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
+    }
+  }
+}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bolus Calculator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0a85ff",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#0f1923",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass-card {
+            background: rgba(39, 48, 58, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .ios-shadow {
+            box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.3);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen flex flex-col max-w-md mx-auto overflow-x-hidden border-x border-slate-200 dark:border-slate-800">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between px-4 py-4 sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight">Bolus Calculator</h1>
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-2xl">settings</span>
+</button>
+</header>
+<main class="flex-1 px-4 py-2 space-y-6">
+<!-- Result Display Section -->
+<section class="glass-card rounded-xl p-6 flex flex-col items-center justify-center text-center space-y-2 border-primary/20 bg-primary/5">
+<p class="text-slate-400 text-sm font-medium uppercase tracking-widest">Suggested Insulin Dose</p>
+<div class="flex items-baseline gap-2">
+<span class="text-6xl font-bold text-primary">6.5</span>
+<span class="text-2xl font-semibold text-primary/80">Units</span>
+</div>
+<div class="flex items-center gap-2 text-slate-400 text-xs mt-2 bg-slate-800/50 px-3 py-1 rounded-full">
+<span>Correction: 1.2u</span>
+<span class="opacity-30">•</span>
+<span>Meal: 5.3u</span>
+</div>
+</section>
+<!-- Input Section -->
+<section class="grid grid-cols-1 gap-4">
+<!-- Glucose Input -->
+<div class="glass-card rounded-xl p-4 flex items-center justify-between group focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+<div class="flex flex-col">
+<label class="text-slate-400 text-xs font-medium uppercase mb-1">Current Glucose</label>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary/70">water_drop</span>
+<input class="bg-transparent border-none p-0 text-3xl font-bold focus:ring-0 placeholder:text-slate-700 w-24" placeholder="0" type="number" value="154"/>
+</div>
+</div>
+<div class="text-right">
+<span class="text-slate-500 font-medium">mg/dL</span>
+</div>
+</div>
+<!-- Carbs Input -->
+<div class="glass-card rounded-xl p-4 flex items-center justify-between group focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+<div class="flex flex-col">
+<label class="text-slate-400 text-xs font-medium uppercase mb-1">Meal Carbohydrates</label>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary/70">restaurant</span>
+<input class="bg-transparent border-none p-0 text-3xl font-bold focus:ring-0 placeholder:text-slate-700 w-24" placeholder="0" type="number" value="45"/>
+</div>
+</div>
+<div class="text-right">
+<span class="text-slate-500 font-medium">grams</span>
+</div>
+</div>
+</section>
+<!-- Summary Details -->
+<section class="space-y-3 px-1">
+<h3 class="text-sm font-semibold text-slate-400 px-1 uppercase tracking-wider">Calculation Factors</h3>
+<div class="space-y-2">
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-400">Target Glucose</span>
+<span class="font-medium">100 mg/dL</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-400">Insulin Sensitivity</span>
+<span class="font-medium">1u : 45 mg/dL</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-400">Carb Ratio</span>
+<span class="font-medium">1u : 8.5g</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-slate-400">Insulin on Board (IOB)</span>
+<span class="font-medium text-orange-400">0.4 Units</span>
+</div>
+</div>
+</section>
+<!-- Medical Disclaimer -->
+<section class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 flex gap-3">
+<span class="material-symbols-outlined text-amber-500 shrink-0">warning</span>
+<p class="text-xs text-amber-200/80 leading-relaxed font-medium">
+<strong class="text-amber-500 block mb-1">NOT A PRESCRIPTION</strong>
+                Consult your clinician before making insulin adjustments. Use these values as a guide only. Always confirm readings with a finger-stick test.
+            </p>
+</section>
+<!-- CTA Button -->
+<div class="pt-4 pb-12">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl ios-shadow transition-transform active:scale-[0.98] flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">check_circle</span>
+                Confirm &amp; Log Bolus
+            </button>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="flex border-t border-slate-200 dark:border-slate-800 bg-background-light dark:bg-slate-900/80 backdrop-blur-lg px-2 pb-8 pt-2 sticky bottom-0 z-50">
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<p class="text-[10px] font-medium leading-normal">Logbook</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">calculate</span>
+<p class="text-[10px] font-medium leading-normal">Bolus</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<p class="text-[10px] font-medium leading-normal">Trends</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined">person</span>
+<p class="text-[10px] font-medium leading-normal">Profile</p>
+</a>
+</nav>
+<!-- Visual Polish: Background Gradients -->
+<div class="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
+<div class="absolute -top-[10%] -left-[10%] w-[50%] h-[40%] bg-primary/10 rounded-full blur-[100px]"></div>
+<div class="absolute bottom-[20%] -right-[10%] w-[40%] h-[30%] bg-blue-600/5 rounded-full blur-[80px]"></div>
+</div>
+</body></html>

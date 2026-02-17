@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Voice Logging Assistant</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#0a85ff",
+              "primary-dark": "#006bd1",
+              "background-light": "#f5f7f8",
+              "background-dark": "#0f1923",
+              "surface-light": "#ffffff",
+              "surface-dark": "#1e293b",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {
+              "DEFAULT": "0.5rem", 
+              "lg": "1rem", 
+              "xl": "1.5rem", 
+              "2xl": "2rem",
+              "full": "9999px"
+            },
+            boxShadow: {
+              'soft': '0 4px 20px -2px rgba(10, 133, 255, 0.1)',
+              'glow': '0 0 15px rgba(10, 133, 255, 0.3)',
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        /* Custom Scrollbar Hide */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Glassmorphism utilities */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .dark .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display h-screen w-full flex justify-center overflow-hidden text-slate-800 dark:text-slate-100">
+<!-- Mobile Container -->
+<div class="w-full max-w-md h-full flex flex-col relative bg-white dark:bg-slate-900 sm:border-x sm:border-slate-200 dark:sm:border-slate-800 shadow-2xl">
+<!-- Header -->
+<header class="flex items-center justify-between px-6 py-4 pt-12 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 sticky top-0">
+<button class="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors">
+<span class="material-icons-round">close</span>
+</button>
+<h1 class="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">Voice Log</h1>
+<button class="p-2 -mr-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-primary font-medium text-sm transition-colors">
+                History
+            </button>
+</header>
+<!-- Chat Stream Area -->
+<main class="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar pb-32">
+<!-- Date Separator -->
+<div class="flex justify-center">
+<span class="text-xs font-medium text-slate-400 uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">Today, 12:45 PM</span>
+</div>
+<!-- User Bubble -->
+<div class="flex flex-col items-end space-y-1 animate-fade-in-up">
+<div class="bg-primary text-white px-5 py-3 rounded-2xl rounded-tr-sm shadow-soft max-w-[85%] text-[15px] leading-relaxed relative group">
+<p>Lunch — 1 cup rice, 1 chicken piece</p>
+<!-- Decorative tail fix for pure CSS bubble look -->
+<div class="absolute top-0 -right-2 w-4 h-4 bg-primary rounded-bl-full hidden group-hover:block"></div>
+</div>
+<span class="text-[10px] text-slate-400 font-medium pr-1">You</span>
+</div>
+<!-- AI Parsing Indicator (Simulated Loading/Typing) -->
+<!-- Ideally this would show briefly before the result. Included for completeness if "thinking". 
+                 Hidden in this static view but good to have in code structure. -->
+<!-- AI Response Card -->
+<div class="flex flex-col items-start space-y-2 w-full animate-fade-in-up delay-100">
+<div class="flex items-center space-x-2 pl-1 mb-1">
+<div class="w-6 h-6 rounded-full bg-gradient-to-tr from-primary to-blue-400 flex items-center justify-center shadow-glow">
+<span class="material-icons-round text-white text-[14px]">auto_awesome</span>
+</div>
+<span class="text-xs font-semibold text-primary">AI Assistant</span>
+</div>
+<!-- Premium Glassmorphism Card -->
+<div class="w-full glass-panel rounded-2xl p-5 shadow-sm relative overflow-hidden group">
+<!-- Subtle background gradient decoration -->
+<div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex justify-between items-baseline mb-4 border-b border-slate-100 dark:border-slate-700/50 pb-3">
+<h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Parsed Meal</h3>
+<span class="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded-md">45g Net Carbs</span>
+</div>
+<!-- List Items -->
+<div class="space-y-4">
+<!-- Item 1 -->
+<div class="flex items-center justify-between group/item">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl overflow-hidden shadow-inner">
+                                    🍚
+                                </div>
+<div>
+<p class="text-sm font-semibold text-slate-800 dark:text-slate-200">White Rice</p>
+<p class="text-xs text-slate-400">1 cup (cooked)</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-slate-800 dark:text-slate-200">45g</p>
+<p class="text-[10px] text-slate-400 uppercase">Carbs</p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center justify-between group/item">
+<div class="flex items-center space-x-3">
+<div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl overflow-hidden shadow-inner">
+                                    🍗
+                                </div>
+<div>
+<p class="text-sm font-semibold text-slate-800 dark:text-slate-200">Chicken Breast</p>
+<p class="text-xs text-slate-400">1 piece (medium)</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-slate-800 dark:text-slate-200">0g</p>
+<p class="text-[10px] text-slate-400 uppercase">Carbs</p>
+</div>
+</div>
+</div>
+<!-- Total Section -->
+<div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-700/50 flex justify-between items-center">
+<div>
+<p class="text-xs text-slate-500 dark:text-slate-400">Glycemic Load</p>
+<div class="flex items-center mt-1 space-x-1">
+<span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+<span class="text-xs font-medium text-slate-700 dark:text-slate-300">Moderate</span>
+</div>
+</div>
+<div class="text-right">
+<p class="text-2xl font-bold text-primary tracking-tight">45<span class="text-sm font-medium text-slate-400 ml-1">g</span></p>
+</div>
+</div>
+</div>
+<!-- Action Buttons attached to card -->
+<div class="flex w-full space-x-3 mt-2">
+<button class="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 py-3 rounded-xl font-medium text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm flex items-center justify-center space-x-2">
+<span class="material-icons-round text-base">edit</span>
+<span>Edit</span>
+</button>
+<button class="flex-[2] bg-primary text-white py-3 rounded-xl font-medium text-sm shadow-soft hover:bg-primary-dark transition-colors flex items-center justify-center space-x-2">
+<span class="material-icons-round text-base">check_circle</span>
+<span>Confirm Log</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Input Footer -->
+<footer class="absolute bottom-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 pb-8 pt-4 px-6 z-30">
+<!-- Suggestion Chips (Optional but helpful context) -->
+<div class="flex justify-center space-x-2 mb-6 overflow-x-auto no-scrollbar opacity-0 animate-[fadeIn_0.5s_ease-out_1s_forwards]">
+<button class="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full text-xs text-slate-500 dark:text-slate-400 border border-transparent hover:border-primary/30 transition-colors">
+                    "Oatmeal and berries"
+                </button>
+<button class="whitespace-nowrap px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full text-xs text-slate-500 dark:text-slate-400 border border-transparent hover:border-primary/30 transition-colors">
+                    "Grilled salmon salad"
+                </button>
+</div>
+<div class="flex items-end justify-between relative">
+<!-- Keyboard Toggle -->
+<button class="p-3 text-slate-400 hover:text-primary transition-colors rounded-full hover:bg-slate-50 dark:hover:bg-slate-800">
+<span class="material-icons-round text-2xl">keyboard</span>
+</button>
+<!-- Mic Button -->
+<div class="absolute left-1/2 -translate-x-1/2 -bottom-2 flex flex-col items-center">
+<!-- Ripple Effect Container (Static representation) -->
+<div class="relative group cursor-pointer">
+<div class="absolute inset-0 bg-primary/20 rounded-full scale-110 animate-pulse"></div>
+<button class="w-16 h-16 bg-primary rounded-full shadow-lg shadow-primary/40 flex items-center justify-center text-white relative z-10 transform transition-transform group-active:scale-95 hover:bg-primary-dark">
+<span class="material-icons-round text-3xl">mic</span>
+</button>
+</div>
+<p class="text-xs text-slate-400 mt-3 font-medium">Tap to record</p>
+</div>
+<!-- Gallery / Camera -->
+<button class="p-3 text-slate-400 hover:text-primary transition-colors rounded-full hover:bg-slate-50 dark:hover:bg-slate-800">
+<span class="material-icons-round text-2xl">photo_camera</span>
+</button>
+</div>
+</footer>
+</div>
+<style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        .delay-100 {
+            animation-delay: 100ms;
+        }
+    </style>
+</body></html>
