@@ -77,10 +77,6 @@ export const useLogsStore = create<LogsState>()(
     )
 );
 
-interface DailyStats {
-    waterGlasses: number;
-    weight: number | null;
-}
 
 interface SubscriptionState {
     isPremium: boolean;
@@ -120,16 +116,15 @@ interface SettingsState {
     glucoseUnit: 'mg/dL' | 'mmol/L';
     targetGlucoseMin: number;
     targetGlucoseMax: number;
-    waterGoal: number; // in ml
-    carbGoal: number; // in g
-    dailyStats: DailyStats;
+    waterGoal: number;
+    waterIntake: number;
+    carbGoal: number;
     setNotifications: (enabled: boolean) => void;
     setTheme: (theme: 'light' | 'dark') => void;
     setGlucoseUnit: (unit: 'mg/dL' | 'mmol/L') => void;
     setTargetRange: (min: number, max: number) => void;
     addWater: (ml: number) => void;
     resetWater: () => void;
-    setWeight: (weight: number) => void;
     setCarbGoal: (goal: number) => void;
 }
 
@@ -142,24 +137,14 @@ export const useSettingsStore = create<SettingsState>()(
             targetGlucoseMin: 70,
             targetGlucoseMax: 180,
             waterGoal: 2000,
+            waterIntake: 0,
             carbGoal: 150,
-            dailyStats: {
-                waterGlasses: 0, // We'll repurpose this as ml or just keep name
-                weight: null,
-            },
             setNotifications: (enabled) => set({ notificationsEnabled: enabled }),
             setTheme: (theme) => set({ theme }),
             setGlucoseUnit: (unit) => set({ glucoseUnit: unit }),
             setTargetRange: (min, max) => set({ targetGlucoseMin: min, targetGlucoseMax: max }),
-            addWater: (ml) => set((state) => ({
-                dailyStats: { ...state.dailyStats, waterGlasses: state.dailyStats.waterGlasses + ml }
-            })),
-            resetWater: () => set((state) => ({
-                dailyStats: { ...state.dailyStats, waterGlasses: 0 }
-            })),
-            setWeight: (weight) => set((state) => ({
-                dailyStats: { ...state.dailyStats, weight }
-            })),
+            addWater: (ml) => set((state) => ({ waterIntake: state.waterIntake + ml })),
+            resetWater: () => set({ waterIntake: 0 }),
             setCarbGoal: (goal) => set({ carbGoal: goal }),
         }),
         {

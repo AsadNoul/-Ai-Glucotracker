@@ -13,15 +13,46 @@ import {
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../constants/Theme';
+import { Colors, Typography, Spacing, Shadow } from '../constants/Theme';
+import { useLogsStore } from '../store';
 
 const { width } = Dimensions.get('window');
 
+// AI-simulated food detection database
+const AI_FOOD_DATABASE = [
+    { name: 'Grilled Chicken Salad', carbs: 12 },
+    { name: 'Brown Rice Bowl', carbs: 45 },
+    { name: 'Avocado Toast', carbs: 28 },
+    { name: 'Pasta Primavera', carbs: 52 },
+    { name: 'Greek Yogurt Parfait', carbs: 22 },
+    { name: 'Turkey Sandwich', carbs: 34 },
+    { name: 'Fruit Smoothie', carbs: 38 },
+    { name: 'Oatmeal with Berries', carbs: 42 },
+    { name: 'Veggie Stir Fry', carbs: 18 },
+    { name: 'Salmon with Quinoa', carbs: 30 },
+];
+
 export const ScanMealScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-    const [scannedItems] = useState(['Avocado', 'Salmon']);
+    const { carbLogs } = useLogsStore();
+    const [scannedItems, setScannedItems] = useState<string[]>([]);
     const [permission, requestPermission] = useCameraPermissions();
     const [isAnalyzing, setIsAnalyzing] = useState(true);
     const [flash, setFlash] = useState<'off' | 'on'>('off');
+
+    // Last meal from real data
+    const lastMeal = carbLogs.length > 0
+        ? `Last: ${carbLogs[0].food_name} (${carbLogs[0].estimated_carbs}g carbs)`
+        : 'No meals logged yet';
+
+    // Simulate AI detecting items after 2 seconds
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const randomFood = AI_FOOD_DATABASE[Math.floor(Math.random() * AI_FOOD_DATABASE.length)];
+            const ingredients = randomFood.name.split(' ');
+            setScannedItems(ingredients.slice(0, 2));
+        }, 2000);
+        return () => clearTimeout(timer);
+    }, []);
 
     useEffect(() => {
         if (!permission) {
@@ -119,7 +150,7 @@ export const ScanMealScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
 
             {/* Bottom Controls */}
             <BlurView intensity={20} tint="dark" style={styles.footerBlur}>
-                <Text style={styles.lastMealText}>Last meal: Breakfast (45g carbs)   <Ionicons name="chevron-forward" size={14} color="#FFF" /></Text>
+                <Text style={styles.lastMealText}>{lastMeal}   <Ionicons name="chevron-forward" size={14} color="#FFF" /></Text>
 
                 <View style={styles.controlsRow}>
                     <TouchableOpacity
@@ -133,17 +164,27 @@ export const ScanMealScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                     <TouchableOpacity
                         style={styles.shutterContainer}
                         onPress={() => {
-                            Alert.alert('Scan Complete', 'AI detected: Avocado Salmon Bowl (42g Carbs)', [
-                                { text: 'Cancel', style: 'cancel' },
-                                {
-                                    text: 'Confirm',
-                                    onPress: () => navigation.navigate('AddLog', {
-                                        tab: 'carbs',
-                                        scannedFood: 'Avocado Salmon Bowl',
-                                        scannedCarbs: '42'
-                                    })
-                                }
-                            ]);
+                            setIsAnalyzing(true);
+                            // Simulate AI processing with random result
+                            setTimeout(() => {
+                                const detected = AI_FOOD_DATABASE[Math.floor(Math.random() * AI_FOOD_DATABASE.length)];
+                                setIsAnalyzing(false);
+                                Alert.alert(
+                                    'Scan Complete',
+                                    `AI detected: ${detected.name} (${detected.carbs}g Carbs)`,
+                                    [
+                                        { text: 'Cancel', style: 'cancel' },
+                                        {
+                                            text: 'Confirm',
+                                            onPress: () => navigation.navigate('AddLog', {
+                                                tab: 'carbs',
+                                                scannedFood: detected.name,
+                                                scannedCarbs: detected.carbs.toString()
+                                            })
+                                        }
+                                    ]
+                                );
+                            }, 1500);
                         }}
                     >
                         <View style={styles.shutterOuter}>

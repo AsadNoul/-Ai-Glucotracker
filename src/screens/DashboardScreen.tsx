@@ -7,43 +7,73 @@ import {
     TouchableOpacity,
     RefreshControl,
     StatusBar,
-    Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing, BorderRadius, Shadow, getThemeColors } from '../constants/Theme';
+import { Typography, Spacing, BorderRadius, Shadow, getThemeColors } from '../constants/Theme';
 import { useAuthStore, useLogsStore, useSubscriptionStore, useSettingsStore } from '../store';
 import { glucoseService } from '../services/supabase';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
 
 export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const { user, isGuest } = useAuthStore();
-    const { theme, dailyStats, addWater, waterGoal } = useSettingsStore();
+    const { theme, waterIntake, addWater, waterGoal, carbGoal, targetGlucoseMin, targetGlucoseMax, glucoseUnit } = useSettingsStore();
     const { glucoseLogs, carbLogs, setGlucoseLogs } = useLogsStore();
     const { creditsRemaining } = useSubscriptionStore();
     const [refreshing, setRefreshing] = useState(false);
 
     const t = getThemeColors(theme);
 
-    // Calculate real data
-    const latestGlucose = useMemo(() => glucoseLogs.length > 0 ? glucoseLogs[0].glucose_value : 108, [glucoseLogs]);
+    // Calculate real data — no hardcoded fallbacks
+    const latestGlucose = useMemo(() => glucoseLogs.length > 0 ? glucoseLogs[0].glucose_value : null, [glucoseLogs]);
     const latestGlucoseTime = useMemo(() => glucoseLogs.length > 0
         ? new Date(glucoseLogs[0].reading_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : '10:23 AM', [glucoseLogs]);
+        : null, [glucoseLogs]);
 
     const todayCarbs = useMemo(() => carbLogs.reduce((acc, log) => {
         const isToday = new Date(log.created_at).toDateString() === new Date().toDateString();
         return isToday ? acc + log.estimated_carbs : acc;
     }, 0), [carbLogs]);
 
-    const carbGoal = 120;
-    const carbPercent = Math.min(100, Math.round((todayCarbs / carbGoal) * 100));
+    const carbPercent = carbGoal > 0 ? Math.min(100, Math.round((todayCarbs / carbGoal) * 100)) : 0;
 
-    // Weekly trend data mockup
+    // Weekly trend — computed from real logs, grouped by day
     const weeklyData = useMemo(() => {
-        return [110, 105, 120, 95, 108, 115, latestGlucose];
-    }, [latestGlucose]);
+        const days: number[] = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dayStr = d.toDateString();
+            const dayLogs = glucoseLogs.filter(l => new Date(l.reading_time).toDateString() === dayStr);
+            if (dayLogs.length > 0) {
+                days.push(Math.round(dayLogs.reduce((s, l) => s + l.glucose_value, 0) / dayLogs.length));
+            } else {
+                days.push(0);
+            }
+        }
+        return days;
+    }, [glucoseLogs]);
+
+    const weeklyAvg = useMemo(() => {
+        const valid = weeklyData.filter(v => v > 0);
+        return valid.length > 0 ? Math.round(valid.reduce((s, v) => s + v, 0) / valid.length) : null;
+    }, [weeklyData]);
+
+    // Dynamic glucose status
+    const glucoseStatus = useMemo(() => {
+        if (latestGlucose === null) return { label: 'No Data', color: 'textTertiary', bgKey: 'glass' };
+        if (latestGlucose >= targetGlucoseMin && latestGlucose <= targetGlucoseMax) return { label: 'In Range', color: 'success', bgKey: 'success' };
+        if (latestGlucose > targetGlucoseMax) return { label: 'High', color: 'error', bgKey: 'error' };
+        return { label: 'Low', color: 'warning', bgKey: 'warning' };
+    }, [latestGlucose, targetGlucoseMin, targetGlucoseMax]);
+
+    // Dynamic range indicator position (0-100%)
+    const rangePosition = useMemo(() => {
+        if (latestGlucose === null) return 50;
+        const min = Math.max(40, targetGlucoseMin - 30);
+        const max = targetGlucoseMax + 60;
+        return Math.min(95, Math.max(5, ((latestGlucose - min) / (max - min)) * 100));
+    }, [latestGlucose, targetGlucoseMin, targetGlucoseMax]);
 
     useEffect(() => {
         loadDashboardData();
@@ -64,6 +94,37 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
         if (!isGuest) await loadDashboardData();
         setRefreshing(false);
     };
+
+    // AI Daily Insight — contextual health tip based on real data
+    const dailyInsight = useMemo(() => {
+        if (glucoseLogs.length === 0) {
+            return { emoji: '👋', title: 'Welcome!', text: 'Log your first glucose reading to unlock AI insights personalized for you.', color: 'primary' };
+        }
+        const today = new Date().toDateString();
+        const todayGlucoseLogs = glucoseLogs.filter(l => new Date(l.reading_time).toDateString() === today);
+        const todayCarbLogs = carbLogs.filter(l => new Date(l.created_at).toDateString() === today);
+        const totalCarbsToday = todayCarbLogs.reduce((s, l) => s + l.estimated_carbs, 0);
+
+        if (todayGlucoseLogs.length > 0) {
+            const avg = todayGlucoseLogs.reduce((s, l) => s + l.glucose_value, 0) / todayGlucoseLogs.length;
+            if (avg > targetGlucoseMax) {
+                return { emoji: '⚠️', title: 'Elevated Trend', text: `Today\'s avg is ${Math.round(avg)} mg/dL — above your ${targetGlucoseMax} target. Consider reducing carbs in your next meal.`, color: 'warning' };
+            }
+            if (avg < targetGlucoseMin) {
+                return { emoji: '🟡', title: 'Watch for Lows', text: `Today\'s avg is ${Math.round(avg)} mg/dL — below ${targetGlucoseMin}. Have a small snack to stabilize.`, color: 'warning' };
+            }
+        }
+
+        if (totalCarbsToday > carbGoal * 0.8) {
+            return { emoji: '🍽️', title: 'Carb Alert', text: `You\'ve consumed ${totalCarbsToday}g of ${carbGoal}g carb goal. Consider a lighter next meal.`, color: 'warning' };
+        }
+
+        if (weeklyAvg && weeklyAvg >= targetGlucoseMin && weeklyAvg <= targetGlucoseMax) {
+            return { emoji: '🌟', title: 'Great Stability!', text: `Your 7-day average of ${weeklyAvg} mg/dL is within target. Keep up the excellent work!`, color: 'success' };
+        }
+
+        return { emoji: '📊', title: 'Stay Consistent', text: 'Log your meals and readings regularly for more accurate AI predictions.', color: 'primary' };
+    }, [glucoseLogs, carbLogs, targetGlucoseMin, targetGlucoseMax, carbGoal, weeklyAvg]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: t.background }]}>
@@ -102,7 +163,7 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
                 <View style={[styles.trendCard, { backgroundColor: t.primary + '10', borderColor: t.primary + '30' }]}>
                     <View style={styles.trendInfo}>
                         <Text style={[styles.trendLabel, { color: t.textSecondary }]}>7-Day Avg</Text>
-                        <Text style={[styles.trendValue, { color: t.primary }]}>106 <Text style={styles.trendUnit}>mg/dL</Text></Text>
+                        <Text style={[styles.trendValue, { color: t.primary }]}>{weeklyAvg ?? '--'} <Text style={styles.trendUnit}>mg/dL</Text></Text>
                     </View>
                     <View style={styles.sparkline}>
                         {weeklyData.map((val, i) => (
@@ -127,27 +188,41 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
                             <MaterialCommunityIcons name="water" size={20} color={t.primary} />
                             <Text style={[styles.cardTitle, { color: t.textSecondary }]}>Glucose Level</Text>
                         </View>
-                        <View style={[styles.statusBadge, { backgroundColor: t.success + '20' }]}>
-                            <View style={[styles.statusDot, { backgroundColor: t.success }]} />
-                            <Text style={[styles.statusText, { color: t.success }]}>In Range</Text>
+                        <View style={[styles.statusBadge, { backgroundColor: (t as any)[glucoseStatus.bgKey] + '20' }]}>
+                            <View style={[styles.statusDot, { backgroundColor: (t as any)[glucoseStatus.color] }]} />
+                            <Text style={[styles.statusText, { color: (t as any)[glucoseStatus.color] }]}>{glucoseStatus.label}</Text>
                         </View>
                     </View>
-                    <Text style={[styles.timestamp, { color: t.textTertiary }]}>Today, {latestGlucoseTime}</Text>
+                    <Text style={[styles.timestamp, { color: t.textTertiary }]}>{latestGlucoseTime ? `Today, ${latestGlucoseTime}` : 'No readings yet'}</Text>
 
                     <View style={styles.glucoseRow}>
-                        <Text style={[styles.glucoseValue, { color: t.text }]}>{latestGlucose}</Text>
-                        <Text style={[styles.glucoseUnit, { color: t.textTertiary }]}> mg/dL</Text>
+                        <Text style={[styles.glucoseValue, { color: t.text }]}>{latestGlucose ?? '--'}</Text>
+                        <Text style={[styles.glucoseUnit, { color: t.textTertiary }]}> {glucoseUnit}</Text>
                     </View>
 
                     <View style={styles.rangeIndicator}>
                         <View style={[styles.rangeBackground, { backgroundColor: t.glass }]} />
-                        <View style={[styles.rangeActive, { left: '45%', backgroundColor: t.primary }]} />
+                        <View style={[styles.rangeActive, { left: `${rangePosition}%`, backgroundColor: (t as any)[glucoseStatus.color] || t.primary }]} />
                         <TouchableOpacity style={styles.detailsLink} onPress={() => navigation.navigate('Insights')}>
                             <Text style={styles.detailsText}>Details </Text>
                             <Ionicons name="arrow-forward" size={14} color={t.primary} />
                         </TouchableOpacity>
                     </View>
                 </View>
+
+                {/* AI Daily Insight Card */}
+                <TouchableOpacity
+                    style={[styles.insightCard, { backgroundColor: (t as any)[dailyInsight.color] + '12', borderColor: (t as any)[dailyInsight.color] + '30' }]}
+                    onPress={() => navigation.navigate('Insights')}
+                    activeOpacity={0.7}
+                >
+                    <Text style={styles.insightEmoji}>{dailyInsight.emoji}</Text>
+                    <View style={styles.insightContent}>
+                        <Text style={[styles.insightTitle, { color: (t as any)[dailyInsight.color] }]}>{dailyInsight.title}</Text>
+                        <Text style={[styles.insightText, { color: t.textSecondary }]}>{dailyInsight.text}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={t.textTertiary} />
+                </TouchableOpacity>
 
                 <View style={styles.row}>
                     {/* Carb Progress */}
@@ -166,8 +241,8 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
                     <View style={[styles.compactCard, { backgroundColor: t.card, borderColor: t.border, flex: 1 }]}>
                         <Text style={[styles.compactTitle, { color: t.textSecondary }]}>Water</Text>
                         <Ionicons name="water" size={32} color="#0A85FF" />
-                        <Text style={[styles.compactValue, { color: t.text, marginVertical: 8 }]}>{dailyStats.waterGlasses} / {waterGoal}</Text>
-                        <TouchableOpacity style={[styles.addButton, { backgroundColor: '#0A85FF' }]} onPress={addWater}>
+                        <Text style={[styles.compactValue, { color: t.text, marginVertical: 8 }]}>{waterIntake} / {waterGoal}ml</Text>
+                        <TouchableOpacity style={[styles.addButton, { backgroundColor: '#0A85FF' }]} onPress={() => addWater(250)}>
                             <Ionicons name="add" size={20} color="#FFF" />
                         </TouchableOpacity>
                     </View>
@@ -540,5 +615,29 @@ const styles = StyleSheet.create({
         fontSize: Typography.sizes.xs + 1,
         fontWeight: Typography.weights.medium,
         textAlign: 'center',
+    },
+    insightCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: Spacing.lg,
+        borderRadius: BorderRadius.xl,
+        borderWidth: 1,
+        marginBottom: Spacing.lg,
+        gap: Spacing.md,
+    },
+    insightEmoji: {
+        fontSize: 28,
+    },
+    insightContent: {
+        flex: 1,
+    },
+    insightTitle: {
+        fontSize: Typography.sizes.md,
+        fontWeight: Typography.weights.bold,
+        marginBottom: 2,
+    },
+    insightText: {
+        fontSize: Typography.sizes.sm,
+        lineHeight: 18,
     },
 });

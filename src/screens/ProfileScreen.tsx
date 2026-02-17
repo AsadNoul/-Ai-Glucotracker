@@ -12,7 +12,7 @@ import {
     Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadow, getThemeColors } from '../constants/Theme';
 import { useAuthStore, useSettingsStore } from '../store';
 import { authService } from '../services/supabase';
@@ -26,6 +26,12 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         setTheme,
         glucoseUnit,
         setGlucoseUnit,
+        targetGlucoseMin,
+        targetGlucoseMax,
+        setTargetRange,
+        carbGoal,
+        setCarbGoal,
+        waterGoal,
     } = useSettingsStore();
 
     const t = getThemeColors(theme);
@@ -189,9 +195,58 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                     <SettingRow
                         icon="analytics"
                         label="Target Range"
-                        value="70-180 mg/dL"
+                        value={`${targetGlucoseMin}-${targetGlucoseMax} ${glucoseUnit}`}
                         color="#FF9800"
-                        onPress={() => showModal('Target Range', 'Your target glucose range is currently set to 70-180 mg/dL. This is the standard recommended range for most adults. Staying within this range helps reduce the risk of long-term complications.')}
+                        onPress={() => {
+                            Alert.alert(
+                                'Set Target Range',
+                                `Current: ${targetGlucoseMin}-${targetGlucoseMax} mg/dL\n\nSelect a preset:`,
+                                [
+                                    { text: 'Tight (70-140)', onPress: () => setTargetRange(70, 140) },
+                                    { text: 'Standard (70-180)', onPress: () => setTargetRange(70, 180) },
+                                    { text: 'Relaxed (80-200)', onPress: () => setTargetRange(80, 200) },
+                                    { text: 'Cancel', style: 'cancel' }
+                                ]
+                            );
+                        }}
+                    />
+                    <SettingRow
+                        icon="restaurant"
+                        label="Daily Carb Goal"
+                        value={`${carbGoal}g`}
+                        color="#E91E63"
+                        onPress={() => {
+                            Alert.alert(
+                                'Set Daily Carb Goal',
+                                `Current goal: ${carbGoal}g\n\nSelect a target:`,
+                                [
+                                    { text: '100g (Low Carb)', onPress: () => setCarbGoal(100) },
+                                    { text: '150g (Moderate)', onPress: () => setCarbGoal(150) },
+                                    { text: '200g (Active)', onPress: () => setCarbGoal(200) },
+                                    { text: '250g (High Energy)', onPress: () => setCarbGoal(250) },
+                                    { text: 'Cancel', style: 'cancel' }
+                                ]
+                            );
+                        }}
+                    />
+                    <SettingRow
+                        icon="water"
+                        label="Daily Water Goal"
+                        value={`${waterGoal}ml`}
+                        color="#0A85FF"
+                        onPress={() => {
+                            Alert.alert(
+                                'Set Water Goal',
+                                `Current goal: ${waterGoal}ml\n\nSelect a target:`,
+                                [
+                                    { text: '1500ml', onPress: () => useSettingsStore.setState({ waterGoal: 1500 }) },
+                                    { text: '2000ml', onPress: () => useSettingsStore.setState({ waterGoal: 2000 }) },
+                                    { text: '2500ml', onPress: () => useSettingsStore.setState({ waterGoal: 2500 }) },
+                                    { text: '3000ml', onPress: () => useSettingsStore.setState({ waterGoal: 3000 }) },
+                                    { text: 'Cancel', style: 'cancel' }
+                                ]
+                            );
+                        }}
                         isLast
                     />
                 </View>
@@ -433,7 +488,7 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.xxl,
         padding: Spacing.xl,
         borderWidth: 1,
-        ...Shadow.large,
+        ...Shadow.dark,
     },
     modalHeader: {
         flexDirection: 'row',

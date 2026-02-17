@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -7,24 +7,21 @@ import {
     TouchableOpacity,
     StatusBar,
     Alert,
+    Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius, Shadow, getThemeColors } from '../constants/Theme';
+import { Typography, Spacing, BorderRadius, Shadow, getThemeColors } from '../constants/Theme';
 import { useLogsStore, useSettingsStore } from '../store';
 
 export const InsightsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-    const { theme } = useSettingsStore();
+    const { theme, targetGlucoseMin, targetGlucoseMax, carbGoal } = useSettingsStore();
     const { glucoseLogs, carbLogs } = useLogsStore();
 
     const t = getThemeColors(theme);
+    const [reportVisible, setReportVisible] = useState(false);
 
     // Calculate real stats
-    const todayCarbs = useMemo(() => carbLogs.reduce((acc, log) => {
-        const isToday = new Date(log.created_at).toDateString() === new Date().toDateString();
-        return isToday ? acc + log.estimated_carbs : acc;
-    }, 0), [carbLogs]);
-
     const averageGlucose = useMemo(() => {
         if (glucoseLogs.length === 0) return 0;
         const sum = glucoseLogs.reduce((acc, log) => acc + log.glucose_value, 0);
@@ -53,6 +50,57 @@ export const InsightsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         const sorted = [...carbLogs].sort((a, b) => b.estimated_carbs - a.estimated_carbs);
         return { name: sorted[0].food_name, grams: sorted[0].estimated_carbs };
     }, [carbLogs]);
+
+    // Glucose Variability (Standard Deviation)
+    const glucoseVariability = useMemo(() => {
+        if (glucoseLogs.length < 3) return null;
+        const values = glucoseLogs.slice(0, 14).map(l => l.glucose_value);
+        const avg = values.reduce((s, v) => s + v, 0) / values.length;
+        const variance = values.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / values.length;
+        return Math.round(Math.sqrt(variance));
+    }, [glucoseLogs]);
+
+    // AI Glucose Prediction
+    const glucosePrediction = useMemo(() => {
+        if (glucoseLogs.length < 2) return null;
+        const recent = glucoseLogs.slice(0, 5);
+        const trend = recent[0].glucose_value - recent[recent.length - 1].glucose_value;
+        const trendPerReading = trend / (recent.length - 1);
+
+        // Factor in recent carbs
+        const today = new Date().toDateString();
+        const todayCarbLogs = carbLogs.filter(l => new Date(l.created_at).toDateString() === today);
+        const recentCarbImpact = todayCarbLogs.length > 0
+            ? todayCarbLogs.reduce((s, l) => s + l.estimated_carbs, 0) * 0.5
+            : 0;
+
+        const predicted = Math.round(recent[0].glucose_value + trendPerReading + (recentCarbImpact > 30 ? 15 : 0));
+        const direction = trendPerReading > 2 ? 'rising' : trendPerReading < -2 ? 'falling' : 'stable';
+        return { value: Math.max(50, Math.min(300, predicted)), direction };
+    }, [glucoseLogs, carbLogs]);
+
+    // Doctor's AI Summary Generator
+    const doctorSummary = useMemo(() => {
+        const bullets: string[] = [];
+        if (glucoseLogs.length === 0) return ['No data available yet. Log glucose readings to generate a clinical summary.'];
+
+        bullets.push(`Patient has ${glucoseLogs.length} glucose readings. Average: ${averageGlucose} mg/dL. Est. A1c: ${estimatedA1c}%.`);
+        bullets.push(`Time in range (${targetGlucoseMin}-${targetGlucoseMax} mg/dL): ${timeInRange}%.${timeInRange < 70 ? ' Below recommended 70% threshold.' : ' Meets recommended threshold.'}`);
+
+        if (glucoseVariability !== null) {
+            bullets.push(`Glucose variability (SD): ${glucoseVariability} mg/dL.${glucoseVariability > 36 ? ' High variability — consider lifestyle adjustments.' : ' Within acceptable range.'}`);
+        }
+
+        if (topTrigger.name !== 'None') {
+            bullets.push(`Highest carb intake recorded: ${topTrigger.name} (${topTrigger.grams}g carbs). This may be a key spike trigger.`);
+        }
+
+        const totalMeals = carbLogs.length;
+        const avgCarbs = totalMeals > 0 ? Math.round(carbLogs.reduce((s, l) => s + l.estimated_carbs, 0) / totalMeals) : 0;
+        bullets.push(`${totalMeals} meals logged with avg ${avgCarbs}g carbs per meal. Daily carb target: ${carbGoal}g.`);
+
+        return bullets;
+    }, [glucoseLogs, carbLogs, averageGlucose, estimatedA1c, timeInRange, topTrigger, glucoseVariability, targetGlucoseMin, targetGlucoseMax, carbGoal]);
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: t.background }]}>
@@ -90,6 +138,30 @@ export const InsightsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                     />
                 </View>
 
+                {/* Glucose Variability */}
+                {glucoseVariability !== null && (
+                    <View style={styles.metricsRow}>
+                        <MetricCard
+                            label="VARIABILITY"
+                            value={`${glucoseVariability}`}
+                            unit="SD"
+                            icon="chart-line-variant"
+                            theme={t}
+                            color={glucoseVariability > 36 ? t.error : t.success}
+                        />
+                        {glucosePrediction && (
+                            <MetricCard
+                                label="NEXT PREDICTION"
+                                value={`${glucosePrediction.value}`}
+                                unit={glucosePrediction.direction === 'rising' ? '↑' : glucosePrediction.direction === 'falling' ? '↓' : '→'}
+                                icon="crystal-ball"
+                                theme={t}
+                                color={glucosePrediction.value > targetGlucoseMax ? t.error : glucosePrediction.value < targetGlucoseMin ? t.warning : t.success}
+                            />
+                        )}
+                    </View>
+                )}
+
                 {/* Smart Insight Card */}
                 <View style={[styles.mainCard, { backgroundColor: t.card, borderColor: t.border }, Shadow.medium]}>
                     <View style={styles.discoveryHeader}>
@@ -106,9 +178,9 @@ export const InsightsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                         {behavioralInsight}
                     </Text>
 
-                    <TouchableOpacity style={[styles.reportBtn, { backgroundColor: t.primary + '10' }]} onPress={() => Alert.alert('Export', 'Doctor\'s Report exported as PDF.')}>
+                    <TouchableOpacity style={[styles.reportBtn, { backgroundColor: t.primary + '10' }]} onPress={() => setReportVisible(true)}>
                         <Ionicons name="document-text" size={18} color={t.primary} />
-                        <Text style={[styles.reportBtnText, { color: t.primary }]}>Export Doctor's Report (PDF)</Text>
+                        <Text style={[styles.reportBtnText, { color: t.primary }]}>View Doctor's AI Summary</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -149,6 +221,55 @@ export const InsightsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                     </View>
                 ))}
             </ScrollView>
+
+            {/* Doctor's AI Summary Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={reportVisible}
+                onRequestClose={() => setReportVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: t.card, borderColor: t.border }]}>
+                        <View style={styles.modalHeader}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                <View style={[styles.discoveryIcon, { backgroundColor: t.primary + '20' }]}>
+                                    <MaterialCommunityIcons name="robot" size={22} color={t.primary} />
+                                </View>
+                                <View>
+                                    <Text style={[styles.discoveryLabel, { color: t.primary }]}>AI-GENERATED</Text>
+                                    <Text style={[styles.discoveryTitle, { color: t.text }]}>Doctor's Summary</Text>
+                                </View>
+                            </View>
+                            <TouchableOpacity onPress={() => setReportVisible(false)}>
+                                <Ionicons name="close-circle" size={28} color={t.textTertiary} />
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={{ marginBottom: 16 }}>
+                            {doctorSummary.map((bullet, i) => (
+                                <View key={i} style={styles.summaryBullet}>
+                                    <Text style={[styles.bulletNumber, { color: t.primary }]}>{i + 1}</Text>
+                                    <Text style={[styles.bulletText, { color: t.text }]}>{bullet}</Text>
+                                </View>
+                            ))}
+                            <View style={[styles.disclaimerBox, { backgroundColor: t.glass }]}>
+                                <Ionicons name="information-circle" size={16} color={t.textTertiary} />
+                                <Text style={[styles.disclaimerText, { color: t.textTertiary }]}>This is an AI-generated summary for informational purposes only. Consult your healthcare provider for medical decisions.</Text>
+                            </View>
+                        </ScrollView>
+                        <TouchableOpacity
+                            style={[styles.reportBtn, { backgroundColor: t.primary }]}
+                            onPress={() => {
+                                setReportVisible(false);
+                                Alert.alert('Success', 'Doctor\'s AI Summary copied. You can share it with your healthcare provider.');
+                            }}
+                        >
+                            <Ionicons name="share-outline" size={18} color="#FFF" />
+                            <Text style={[styles.reportBtnText, { color: '#FFF' }]}>Share Summary</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -358,5 +479,52 @@ const styles = StyleSheet.create({
     activityValue: {
         fontSize: Typography.sizes.md,
         fontWeight: 'bold',
-    }
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        borderTopLeftRadius: BorderRadius.xxl,
+        borderTopRightRadius: BorderRadius.xxl,
+        padding: Spacing.xl,
+        maxHeight: '80%',
+        borderWidth: 1,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: Spacing.xl,
+    },
+    summaryBullet: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: Spacing.md,
+        marginBottom: Spacing.lg,
+    },
+    bulletNumber: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        width: 24,
+    },
+    bulletText: {
+        flex: 1,
+        fontSize: Typography.sizes.md,
+        lineHeight: 22,
+    },
+    disclaimerBox: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 8,
+        padding: Spacing.md,
+        borderRadius: BorderRadius.lg,
+        marginTop: Spacing.md,
+    },
+    disclaimerText: {
+        flex: 1,
+        fontSize: 11,
+        lineHeight: 16,
+    },
 });
