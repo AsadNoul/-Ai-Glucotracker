@@ -120,15 +120,17 @@ interface SettingsState {
     glucoseUnit: 'mg/dL' | 'mmol/L';
     targetGlucoseMin: number;
     targetGlucoseMax: number;
-    waterGoal: number;
+    waterGoal: number; // in ml
+    carbGoal: number; // in g
     dailyStats: DailyStats;
     setNotifications: (enabled: boolean) => void;
     setTheme: (theme: 'light' | 'dark') => void;
     setGlucoseUnit: (unit: 'mg/dL' | 'mmol/L') => void;
     setTargetRange: (min: number, max: number) => void;
-    addWater: () => void;
+    addWater: (ml: number) => void;
     resetWater: () => void;
     setWeight: (weight: number) => void;
+    setCarbGoal: (goal: number) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -139,17 +141,18 @@ export const useSettingsStore = create<SettingsState>()(
             glucoseUnit: 'mg/dL',
             targetGlucoseMin: 70,
             targetGlucoseMax: 180,
-            waterGoal: 8,
+            waterGoal: 2000,
+            carbGoal: 150,
             dailyStats: {
-                waterGlasses: 0,
+                waterGlasses: 0, // We'll repurpose this as ml or just keep name
                 weight: null,
             },
             setNotifications: (enabled) => set({ notificationsEnabled: enabled }),
             setTheme: (theme) => set({ theme }),
             setGlucoseUnit: (unit) => set({ glucoseUnit: unit }),
             setTargetRange: (min, max) => set({ targetGlucoseMin: min, targetGlucoseMax: max }),
-            addWater: () => set((state) => ({
-                dailyStats: { ...state.dailyStats, waterGlasses: state.dailyStats.waterGlasses + 1 }
+            addWater: (ml) => set((state) => ({
+                dailyStats: { ...state.dailyStats, waterGlasses: state.dailyStats.waterGlasses + ml }
             })),
             resetWater: () => set((state) => ({
                 dailyStats: { ...state.dailyStats, waterGlasses: 0 }
@@ -157,6 +160,7 @@ export const useSettingsStore = create<SettingsState>()(
             setWeight: (weight) => set((state) => ({
                 dailyStats: { ...state.dailyStats, weight }
             })),
+            setCarbGoal: (goal) => set({ carbGoal: goal }),
         }),
         {
             name: 'settings-storage',
