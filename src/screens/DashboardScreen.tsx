@@ -330,6 +330,66 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
                         onPress={() => navigation.navigate('Emergency')}
                     />
                 </View>
+                <View style={styles.actionsGrid}>
+                    <ActionItem
+                        icon="microphone"
+                        label="Voice Log"
+                        color="#9C27B0"
+                        theme={t}
+                        onPress={() => navigation.navigate('VoiceLog')}
+                    />
+                    <ActionItem
+                        icon="barcode-scan"
+                        label="Barcode"
+                        color="#795548"
+                        theme={t}
+                        onPress={() => navigation.navigate('BarcodeScan')}
+                    />
+                    <ActionItem
+                        icon="flask"
+                        label="A1C Report"
+                        color="#2196F3"
+                        theme={t}
+                        onPress={() => navigation.navigate('A1CReport')}
+                    />
+                    <ActionItem
+                        icon="file-document"
+                        label="Dr. Report"
+                        color="#009688"
+                        theme={t}
+                        onPress={() => navigation.navigate('DoctorReport')}
+                    />
+                </View>
+                <View style={styles.actionsGrid}>
+                    <ActionItem
+                        icon="needle"
+                        label="Insulin Calc"
+                        color="#E91E63"
+                        theme={t}
+                        onPress={() => navigation.navigate('InsulinCalculator')}
+                    />
+                    <ActionItem
+                        icon="trophy"
+                        label="Achievements"
+                        color="#FFD700"
+                        theme={t}
+                        onPress={() => navigation.navigate('Achievements')}
+                    />
+                    <ActionItem
+                        icon="heart-pulse"
+                        label="Vitals"
+                        color="#FF5252"
+                        theme={t}
+                        onPress={() => navigation.navigate('Vitals')}
+                    />
+                    <ActionItem
+                        icon="account-group"
+                        label="Caregivers"
+                        color="#3F51B5"
+                        theme={t}
+                        onPress={() => navigation.navigate('Caregiver')}
+                    />
+                </View>
             </ScrollView>
         </SafeAreaView>
     );
@@ -337,6 +397,13 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
 
 const ActionItem = ({ icon, label, onPress, color, isFab, theme }: any) => {
     const t = theme;
+    // Map legacy short names, pass all other MCIcon names directly
+    const iconMap: Record<string, string> = {
+        'overscan': 'scan-helper',
+        'edit-calendar': 'note-edit-outline',
+        'add': 'plus',
+    };
+    const iconName = iconMap[icon] || icon;
     return (
         <TouchableOpacity style={styles.actionContainer} onPress={onPress}>
             <View style={[
@@ -346,7 +413,7 @@ const ActionItem = ({ icon, label, onPress, color, isFab, theme }: any) => {
                 !isFab && { borderColor: t.border, borderWidth: 1 }
             ]}>
                 <MaterialCommunityIcons
-                    name={icon === 'overscan' ? 'scan-helper' : icon === 'edit-calendar' ? 'note-edit-outline' : icon === 'add' ? 'plus' : 'history'}
+                    name={iconName as any}
                     size={isFab ? 28 : 24}
                     color={isFab ? '#FFF' : color || t.primary}
                 />

@@ -21,7 +21,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "GlucoTrack AI needs camera access to scan food for carb estimation",
         "NSPhotoLibraryUsageDescription": "GlucoTrack AI needs photo library access to select food images",
-        "NSMicrophoneUsageDescription": "GlucoTrack AI needs microphone access for voice notes"
+        "NSMicrophoneUsageDescription": "GlucoTrack AI needs microphone access for voice logging",
+        "NSSpeechRecognitionUsageDescription": "GlucoTrack AI uses speech recognition to log meals by voice"
       }
     },
     "android": {
@@ -34,7 +35,8 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "RECORD_AUDIO"
       ],
       "googleServicesFile": "./google-services.json"
     },
@@ -50,7 +52,14 @@
           "photosPermission": "Allow GlucoTrack AI to access your photos to scan food"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "GlucoTrack AI needs microphone access for voice meal logging",
+          "speechRecognitionPermission": "GlucoTrack AI uses speech recognition to log meals by voice"
+        }
+      ]
     ],
     "notification": {
       "icon": "./assets/notification-icon.png",

@@ -246,7 +246,8 @@ export const AddLogScreen: React.FC<{ navigation: any; route: any }> = ({ naviga
 
                 const totalCarbs = Math.round(parseInt(carbs) * parseFloat(servings || '1'));
                 addCarbLog({
-                    id: Math.random().toString(),
+                    id: Date.now().toString(),
+
                     user_id: user?.id || 'guest',
                     food_name: foodName,
                     estimated_carbs: totalCarbs,
@@ -271,7 +272,8 @@ export const AddLogScreen: React.FC<{ navigation: any; route: any }> = ({ naviga
             } else if (activeTab === 'glucose') {
                 if (!glucoseValue) throw new Error('Please enter glucose value');
                 addGlucoseLog({
-                    id: Math.random().toString(),
+                    id: Date.now().toString(),
+
                     user_id: user?.id || 'guest',
                     glucose_value: parseInt(glucoseValue),
                     reading_time: new Date().toISOString(),
@@ -280,7 +282,8 @@ export const AddLogScreen: React.FC<{ navigation: any; route: any }> = ({ naviga
             } else {
                 if (!insulinUnits) throw new Error('Please enter insulin units');
                 addInsulinLog({
-                    id: Math.random().toString(),
+                    id: Date.now().toString(),
+
                     user_id: user?.id || 'guest',
                     units: parseFloat(insulinUnits),
                     type: insulinType,

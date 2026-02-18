@@ -3,6 +3,15 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, GlucoseLog, CarbLog, InsulinLog } from '../services/supabase';
 
+export interface VitalEntry {
+    id: string;
+    type: 'blood_pressure' | 'weight' | 'heart_rate';
+    values: { systolic?: number; diastolic?: number; weight?: number; heartRate?: number };
+    timestamp: string;
+    notes?: string;
+}
+
+
 interface AuthState {
     user: User | null;
     isAuthenticated: boolean;
@@ -37,14 +46,18 @@ interface LogsState {
     glucoseLogs: GlucoseLog[];
     carbLogs: CarbLog[];
     insulinLogs: InsulinLog[];
+    vitals: VitalEntry[];
     setGlucoseLogs: (logs: GlucoseLog[]) => void;
     setCarbLogs: (logs: CarbLog[]) => void;
     setInsulinLogs: (logs: InsulinLog[]) => void;
+    setVitals: (vitals: VitalEntry[]) => void;
     addGlucoseLog: (log: GlucoseLog) => void;
     addCarbLog: (log: CarbLog) => void;
     addInsulinLog: (log: InsulinLog) => void;
+    addVital: (vital: VitalEntry) => void;
     clearLogs: () => void;
 }
+
 
 export const useLogsStore = create<LogsState>()(
     persist(
@@ -52,9 +65,11 @@ export const useLogsStore = create<LogsState>()(
             glucoseLogs: [],
             carbLogs: [],
             insulinLogs: [],
+            vitals: [],
             setGlucoseLogs: (logs) => set({ glucoseLogs: logs }),
             setCarbLogs: (logs) => set({ carbLogs: logs }),
             setInsulinLogs: (logs) => set({ insulinLogs: logs }),
+            setVitals: (vitals) => set({ vitals }),
             addGlucoseLog: (log) => set((state) => ({
                 glucoseLogs: [log, ...state.glucoseLogs]
             })),
@@ -64,12 +79,17 @@ export const useLogsStore = create<LogsState>()(
             addInsulinLog: (log) => set((state) => ({
                 insulinLogs: [log, ...state.insulinLogs]
             })),
+            addVital: (log) => set((state) => ({
+                vitals: [log, ...state.vitals]
+            })),
             clearLogs: () => set({
                 glucoseLogs: [],
                 carbLogs: [],
-                insulinLogs: []
+                insulinLogs: [],
+                vitals: [],
             }),
         }),
+
         {
             name: 'logs-storage',
             storage: createJSONStorage(() => AsyncStorage),

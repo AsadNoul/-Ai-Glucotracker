@@ -18,6 +18,14 @@ import { ActivityScreen } from '../screens/ActivityScreen';
 import { MoodScreen } from '../screens/MoodScreen';
 import { EducationScreen } from '../screens/EducationScreen';
 import { EmergencyScreen } from '../screens/EmergencyScreen';
+import { VoiceLogScreen } from '../screens/VoiceLogScreen';
+import { A1CReportScreen } from '../screens/A1CReportScreen';
+import { DoctorReportScreen } from '../screens/DoctorReportScreen';
+import { InsulinCalculatorScreen } from '../screens/InsulinCalculatorScreen';
+import { AchievementsScreen } from '../screens/AchievementsScreen';
+import { VitalsScreen } from '../screens/VitalsScreen';
+import { CaregiverScreen } from '../screens/CaregiverScreen';
+import { BarcodeScanScreen } from '../screens/BarcodeScanScreen';
 import { Colors, Shadow, getThemeColors } from '../constants/Theme';
 import { useSettingsStore } from '../store';
 
@@ -118,6 +126,14 @@ export const AppNavigator = () => {
             <Stack.Screen name="Mood" component={MoodScreen} />
             <Stack.Screen name="Education" component={EducationScreen} />
             <Stack.Screen name="Emergency" component={EmergencyScreen} />
+            <Stack.Screen name="VoiceLog" component={VoiceLogScreen} options={{ animation: 'fade_from_bottom' }} />
+            <Stack.Screen name="A1CReport" component={A1CReportScreen} />
+            <Stack.Screen name="DoctorReport" component={DoctorReportScreen} />
+            <Stack.Screen name="InsulinCalculator" component={InsulinCalculatorScreen} />
+            <Stack.Screen name="Achievements" component={AchievementsScreen} />
+            <Stack.Screen name="Vitals" component={VitalsScreen} />
+            <Stack.Screen name="Caregiver" component={CaregiverScreen} />
+            <Stack.Screen name="BarcodeScan" component={BarcodeScanScreen} />
         </Stack.Navigator>
     );
 };

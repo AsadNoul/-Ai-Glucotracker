@@ -11,7 +11,11 @@ import {
     ActivityIndicator,
     Modal,
     TextInput,
+    LayoutAnimation,
+    Platform,
+    UIManager,
 } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadow, getThemeColors } from '../constants/Theme';
@@ -25,6 +29,11 @@ const DIABETES_TYPES = [
     { key: 'prediabetes' as const, label: 'Prediabetes', icon: '⚠️', desc: 'At risk' },
     { key: 'none' as const, label: 'None / Other', icon: '💚', desc: 'General wellness' },
 ];
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 
 export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const { user, isGuest, logout } = useAuthStore();
@@ -51,6 +60,15 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
     const [ageInput, setAgeInput] = useState(age > 0 ? age.toString() : '');
     const [weightInput, setWeightInput] = useState(weight > 0 ? weight.toString() : '');
     const [weightUnitInput, setWeightUnitInput] = useState(weightUnit);
+    const [expandedSections, setExpandedSections] = useState<string[]>(['profile']);
+
+    const toggleSection = (section: string) => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setExpandedSections(prev =>
+            prev.includes(section) ? prev.filter(s => s !== section) : [...prev, section]
+        );
+    };
+
 
     // ─── Health Summary Stats ───────────────────────────────────────────────
     const healthStats = useMemo(() => {
@@ -128,6 +146,31 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         </TouchableOpacity>
     );
 
+    const CollapsibleSection = ({ id, title, icon, children }: any) => {
+        const isExpanded = expandedSections.includes(id);
+        return (
+            <View style={styles.sectionWrapper}>
+                <TouchableOpacity
+                    style={[styles.sectionHeader, { backgroundColor: t.card, borderColor: t.border }]}
+                    onPress={() => toggleSection(id)}
+                    activeOpacity={0.7}
+                >
+                    <View style={styles.sectionHeaderLeft}>
+                        <Text style={styles.sectionIcon}>{icon}</Text>
+                        <Text style={[styles.sectionTitleText, { color: t.text }]}>{title}</Text>
+                    </View>
+                    <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={18} color={t.textTertiary} />
+                </TouchableOpacity>
+                {isExpanded && (
+                    <View style={[styles.settingsGroup, { backgroundColor: t.card, borderColor: t.border }, Shadow.light]}>
+                        {children}
+                    </View>
+                )}
+            </View>
+        );
+    };
+
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: t.background }]}>
             <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
@@ -193,9 +236,8 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                     </View>
                 </View>
 
-                {/* Health Profile */}
-                <Text style={[styles.sectionTitle, { color: t.textTertiary }]}>🏥 HEALTH PROFILE</Text>
-                <View style={[styles.settingsGroup, { backgroundColor: t.card, borderColor: t.border }, Shadow.light]}>
+                {/* Sections */}
+                <CollapsibleSection id="profile" title="Health Profile" icon="🏥">
                     <SettingRow icon="medical" label="Diabetes Type" value={diabetesInfo.label} color="#E91E63"
                         onPress={() => {
                             Alert.alert('Diabetes Type', 'Select your condition:', [
@@ -232,11 +274,9 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                         }}
                         isLast
                     />
-                </View>
+                </CollapsibleSection>
 
-                {/* Goals */}
-                <Text style={[styles.sectionTitle, { color: t.textTertiary }]}>🎯 DAILY GOALS</Text>
-                <View style={[styles.settingsGroup, { backgroundColor: t.card, borderColor: t.border }, Shadow.light]}>
+                <CollapsibleSection id="goals" title="Daily Goals" icon="🎯">
                     <SettingRow icon="restaurant" label="Daily Carb Goal" value={`${carbGoal}g`} color="#E91E63"
                         onPress={() => {
                             Alert.alert('Set Daily Carb Goal', `Current: ${carbGoal}g`, [
@@ -260,11 +300,9 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                         }}
                         isLast
                     />
-                </View>
+                </CollapsibleSection>
 
-                {/* Experience */}
-                <Text style={[styles.sectionTitle, { color: t.textTertiary }]}>⚙️ EXPERIENCE</Text>
-                <View style={[styles.settingsGroup, { backgroundColor: t.card, borderColor: t.border }, Shadow.light]}>
+                <CollapsibleSection id="experience" title="App Settings" icon="⚙️">
                     <SettingRow icon="moon" label="Dark Mode" color="#7B61FF">
                         <Switch value={theme === 'dark'} onValueChange={(val) => setTheme(val ? 'dark' : 'light')}
                             trackColor={{ false: '#767577', true: t.primary }} thumbColor="#f4f3f4" />
@@ -273,28 +311,24 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                         <Switch value={notificationsEnabled} onValueChange={setNotifications}
                             trackColor={{ false: '#767577', true: t.primary }} thumbColor="#f4f3f4" />
                     </SettingRow>
-                </View>
+                </CollapsibleSection>
 
-                {/* Reminders */}
-                <Text style={[styles.sectionTitle, { color: t.textTertiary }]}>⏰ REMINDERS</Text>
-                <View style={[styles.settingsGroup, { backgroundColor: t.card, borderColor: t.border }, Shadow.light]}>
-                    <SettingRow icon="restaurant-outline" label="Meal Logging Reminder" color="#FF9800">
+                <CollapsibleSection id="reminders" title="Reminders" icon="⏰">
+                    <SettingRow icon="restaurant-outline" label="Meal Logging" color="#FF9800">
                         <Switch value={reminderMealEnabled} onValueChange={(v) => setReminder('reminderMealEnabled', v)}
                             trackColor={{ false: '#767577', true: '#FF9800' }} thumbColor="#f4f3f4" />
                     </SettingRow>
-                    <SettingRow icon="water-outline" label="Glucose Check Reminder" color="#4CAF50">
+                    <SettingRow icon="water-outline" label="Glucose Check" color="#4CAF50">
                         <Switch value={reminderGlucoseEnabled} onValueChange={(v) => setReminder('reminderGlucoseEnabled', v)}
                             trackColor={{ false: '#767577', true: '#4CAF50' }} thumbColor="#f4f3f4" />
                     </SettingRow>
-                    <SettingRow icon="cafe-outline" label="Water Intake Reminder" color="#0A85FF" isLast>
+                    <SettingRow icon="cafe-outline" label="Water Intake" color="#0A85FF" isLast>
                         <Switch value={reminderWaterEnabled} onValueChange={(v) => setReminder('reminderWaterEnabled', v)}
                             trackColor={{ false: '#767577', true: '#0A85FF' }} thumbColor="#f4f3f4" />
                     </SettingRow>
-                </View>
+                </CollapsibleSection>
 
-                {/* Tools & Features */}
-                <Text style={[styles.sectionTitle, { color: t.textTertiary }]}>🛠️ TOOLS & FEATURES</Text>
-                <View style={[styles.settingsGroup, { backgroundColor: t.card, borderColor: t.border }, Shadow.light]}>
+                <CollapsibleSection id="tools" title="Tools & Features" icon="🛠️">
                     <SettingRow icon="book" label="Logbook" value="Timeline" color="#2196F3"
                         onPress={() => navigation.navigate('Logbook')} />
                     <SettingRow icon="medical" label="Medications" value="Track doses" color="#7B61FF"
@@ -307,56 +341,28 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                         onPress={() => navigation.navigate('Education')} />
                     <SettingRow icon="alert-circle" label="Emergency" value="SOS" color="#FF1744"
                         onPress={() => navigation.navigate('Emergency')} isLast />
-                </View>
+                </CollapsibleSection>
 
-                {/* Membership */}
-                <Text style={[styles.sectionTitle, { color: t.textTertiary }]}>👑 MEMBERSHIP</Text>
-                <View style={[styles.settingsGroup, { backgroundColor: t.card, borderColor: t.border }, Shadow.light]}>
-                    <SettingRow icon="star" label="Manage Subscription" value="Pro Plan" color="#FFD700"
-                        onPress={() => navigation.navigate('CreditsStore')} />
-                    <SettingRow icon="refresh-circle" label="Restore Purchases" color="#4CAF50"
-                        onPress={() => Alert.alert('Restore', 'Purchases restored successfully.')} isLast />
-                </View>
-
-                {/* Data Management */}
-                <Text style={[styles.sectionTitle, { color: t.textTertiary }]}>📦 DATA MANAGEMENT</Text>
-                <View style={[styles.settingsGroup, { backgroundColor: t.card, borderColor: t.border }, Shadow.light]}>
+                <CollapsibleSection id="data" title="Data & Privacy" icon="📦">
                     <SettingRow icon="download-outline" label="Export All Data" value="CSV" color="#2196F3"
                         onPress={handleExportData} />
                     <SettingRow icon="cloud-upload-outline" label="Sync to Cloud" color="#4CAF50"
                         onPress={handleSync} />
-                    <SettingRow icon="trash-outline" label="Clear All Logs" color="#FF5252"
-                        onPress={() => {
-                            Alert.alert(
-                                'Clear All Logs',
-                                'This will permanently delete all your glucose readings and meal logs. This cannot be undone.',
-                                [
-                                    { text: 'Cancel', style: 'cancel' },
-                                    {
-                                        text: 'Delete All', style: 'destructive',
-                                        onPress: () => {
-                                            useLogsStore.setState({ glucoseLogs: [], carbLogs: [], insulinLogs: [] });
-                                            Alert.alert('Done', 'All logs have been cleared.');
-                                        }
-                                    }
-                                ]
-                            );
-                        }}
-                        isLast
-                    />
-                </View>
-
-                {/* Resources */}
-                <Text style={[styles.sectionTitle, { color: t.textTertiary }]}>📚 RESOURCES</Text>
-                <View style={[styles.settingsGroup, { backgroundColor: t.card, borderColor: t.border }, Shadow.light]}>
-                    <SettingRow icon="help-circle" label="Help Center" color={t.primary}
-                        onPress={() => showModal('Help Center', 'Need assistance? Reach out to us at support@glucotrack.ai or visit our website for comprehensive guides and FAQs about managing your glucose levels with AI.')} />
                     <SettingRow icon="shield-checkmark" label="Privacy Policy" color="#607D8B"
                         onPress={() => showModal('Privacy Policy', 'At GlucoTrack AI, your health data is private and encrypted. We do not sell your personal information. Your data is used exclusively to provide you with insights and logs. We use industry-standard security measures to protect your information.')} />
                     <SettingRow icon="document-text" label="Terms & Conditions" color="#607D8B"
-                        onPress={() => showModal('Terms of Service', 'By using GlucoTrack AI, you agree to our terms. This app is for informational purposes and is not a replacement for professional medical advice. Please consult your healthcare provider before making medical decisions.')}
-                        isLast />
-                </View>
+                        onPress={() => showModal('Terms of Service', 'By using GlucoTrack AI, you agree to our terms. This app is for informational purposes and is not a replacement for professional medical advice. Please consult your healthcare provider before making medical decisions.')} />
+                    <SettingRow icon="trash-outline" label="Clear All Logs" color="#FF5252"
+                        onPress={() => {
+                            Alert.alert('Clear All Logs', 'This will permanently delete all logs. This cannot be undone.', [
+                                { text: 'Cancel', style: 'cancel' },
+                                { text: 'Delete All', style: 'destructive', onPress: () => { useLogsStore.setState({ glucoseLogs: [], carbLogs: [], insulinLogs: [] }); Alert.alert('Done', 'All logs have been cleared.'); } }
+                            ]);
+                        }}
+                        isLast
+                    />
+                </CollapsibleSection>
+
 
                 {/* Actions */}
                 <TouchableOpacity style={[styles.logoutBtn, { backgroundColor: t.error + '10' }]} onPress={handleLogout}>
@@ -475,9 +481,15 @@ const styles = StyleSheet.create({
     statLabel: { fontSize: 9, fontWeight: '600', marginTop: 2 },
     statDivider: { width: 1, height: 30, alignSelf: 'center' },
     // Section
-    sectionTitle: { fontSize: 10, fontWeight: Typography.weights.bold, letterSpacing: 1.2, marginBottom: Spacing.sm, marginLeft: 4 },
-    settingsGroup: { borderRadius: BorderRadius.xl, borderWidth: 1, marginBottom: Spacing.xl, overflow: 'hidden' },
+    // Sections
+    sectionWrapper: { marginBottom: Spacing.md },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingVertical: 16, borderRadius: BorderRadius.xl, borderWidth: 1 },
+    sectionHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    sectionIcon: { fontSize: 18 },
+    sectionTitleText: { fontSize: 15, fontWeight: '700' },
+    settingsGroup: { borderRadius: BorderRadius.xl, borderWidth: 1, marginTop: Spacing.xs, overflow: 'hidden' },
     settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg, borderBottomWidth: 1 },
+
     settingLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
     iconBox: { width: 36, height: 36, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     settingLabel: { fontSize: Typography.sizes.md, fontWeight: Typography.weights.medium },
