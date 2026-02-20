@@ -41,6 +41,7 @@ export interface GlucoseLog {
     reading_time: string;
     notes?: string;
     created_at: string;
+    sync_status?: 'synced' | 'pending' | 'local';
 }
 
 export interface CarbLog {
@@ -50,6 +51,7 @@ export interface CarbLog {
     estimated_carbs: number;
     photo_url?: string;
     created_at: string;
+    sync_status?: 'synced' | 'pending' | 'local';
 }
 
 export interface InsulinLog {
@@ -59,6 +61,7 @@ export interface InsulinLog {
     type: 'rapid' | 'long-acting' | 'mixed';
     timestamp: string;
     created_at: string;
+    sync_status?: 'synced' | 'pending' | 'local';
 }
 
 // Auth service

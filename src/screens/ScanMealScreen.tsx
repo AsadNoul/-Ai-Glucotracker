@@ -20,7 +20,7 @@ import { BlurView } from 'expo-blur';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors, Typography, Spacing, Shadow, BorderRadius } from '../constants/Theme';
-import { useLogsStore, useSettingsStore } from '../store';
+import { useLogsStore, useSettingsStore, useSubscriptionStore } from '../store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -128,12 +128,27 @@ export const ScanMealScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
     const takePhoto = useCallback(async () => {
         if (!cameraRef.current) return;
 
+        // Credit Check
+        const { isPremium, creditsRemaining, decrementCredit } = useSubscriptionStore.getState();
+        if (!isPremium && creditsRemaining <= 0) {
+            Alert.alert(
+                'Out of Credits',
+                'You have used all your free AI scans for today. Upgrade to Premium for unlimited scans!',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Go Premium', onPress: () => navigation.navigate('CreditsStore') }
+                ]
+            );
+            return;
+        }
+
         try {
             const photo = await cameraRef.current.takePictureAsync({
                 quality: 0.7,
                 skipProcessing: false,
             });
             if (photo?.uri) {
+                if (!isPremium) decrementCredit();
                 setCapturedPhoto(photo.uri);
                 setScreenMode('review');
             }
@@ -141,7 +156,7 @@ export const ScanMealScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             console.error('Failed to take photo:', error);
             Alert.alert('Error', 'Failed to capture photo. Please try again.');
         }
-    }, []);
+    }, [navigation]);
 
     // ─── Pick from Library ───────────────────────────────────────────
     const pickFromLibrary = useCallback(async () => {
@@ -206,7 +221,7 @@ export const ScanMealScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
             user_id: 'local',
             food_name: totalName,
             estimated_carbs: totalCarbs,
-            photo_url: capturedPhoto === 'SKIP' ? undefined : capturedPhoto,
+            photo_url: (capturedPhoto === 'SKIP' || !capturedPhoto) ? undefined : capturedPhoto,
             created_at: new Date().toISOString(),
         });
 

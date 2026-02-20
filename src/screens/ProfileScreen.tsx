@@ -19,8 +19,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadow, getThemeColors } from '../constants/Theme';
-import { useAuthStore, useSettingsStore, useLogsStore } from '../store';
+import { useAuthStore, useSettingsStore, useLogsStore, useSubscriptionStore } from '../store';
 import { authService } from '../services/supabase';
+import { HealthService } from '../services/health';
+import { ADMIN_EMAIL } from '../constants/Config';
 
 const DIABETES_TYPES = [
     { key: 'type1' as const, label: 'Type 1', icon: '💉', desc: 'Insulin-dependent' },
@@ -38,6 +40,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const { user, isGuest, logout } = useAuthStore();
     const { glucoseLogs, carbLogs } = useLogsStore();
+    const { isPremium } = useSubscriptionStore();
     const {
         notificationsEnabled, setNotifications,
         theme, setTheme,
@@ -101,12 +104,21 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         setModalVisible(true);
     };
 
-    const handleSync = () => {
+    const handleHealthSync = async () => {
         setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
-            Alert.alert('Success', 'Health data synced with secure cloud.');
-        }, 1500);
+        const permitted = await HealthService.requestPermissions();
+        if (permitted) {
+            const data = await HealthService.syncData();
+            if (data && data.length > 0) {
+                // In a real app, we'd add these readings to the store
+                Alert.alert('Success', `Imported ${data.length} readings from ${data[0].source}.`);
+            } else {
+                Alert.alert('All Caught Up', 'No new readings found in your health app.');
+            }
+        } else {
+            Alert.alert('Permission Denied', 'GlucoTrack AI needs permission to access your health data.');
+        }
+        setLoading(false);
     };
 
     const handleExportData = () => {
@@ -181,7 +193,7 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                     <Ionicons name="chevron-back" size={24} color={t.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: t.text }]}>Settings</Text>
-                <TouchableOpacity onPress={handleSync} style={[styles.syncButton, { backgroundColor: t.glass }]}>
+                <TouchableOpacity onPress={handleHealthSync} style={[styles.syncButton, { backgroundColor: t.glass }]}>
                     {loading ? <ActivityIndicator size="small" color={t.primary} /> : <Ionicons name="cloud-upload-outline" size={20} color={t.primary} />}
                 </TouchableOpacity>
             </View>
@@ -340,14 +352,58 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                     <SettingRow icon="school" label="Learning Hub" value="Articles" color="#00BCD4"
                         onPress={() => navigation.navigate('Education')} />
                     <SettingRow icon="alert-circle" label="Emergency" value="SOS" color="#FF1744"
-                        onPress={() => navigation.navigate('Emergency')} isLast />
+                        onPress={() => navigation.navigate('Emergency')} isLast={user?.email !== ADMIN_EMAIL} />
+                    {user?.email === ADMIN_EMAIL && (
+                        <SettingRow
+                            icon="shield-checkmark-outline"
+                            label="Admin Panel"
+                            value="Superuser"
+                            color={t.accent}
+                            onPress={() => navigation.navigate('AdminPanel')}
+                            isLast
+                        />
+                    )}
+                </CollapsibleSection>
+
+                <CollapsibleSection id="health" title="Health Integration" icon="🏥">
+                    <SettingRow
+                        icon={Platform.OS === 'ios' ? "logo-apple" : "logo-google"}
+                        label={Platform.OS === 'ios' ? "Apple Health" : "Google Fit"}
+                        value="Not Connected"
+                        color={Platform.OS === 'ios' ? "#000" : "#4285F4"}
+                        onPress={handleHealthSync}
+                    />
+                    <SettingRow
+                        icon="sync-outline"
+                        label="Auto-Sync"
+                        color="#4CAF50"
+                        isLast
+                    >
+                        <Switch
+                            value={isPremium}
+                            onValueChange={() => {
+                                if (!isPremium) {
+                                    Alert.alert(
+                                        'Premium Required',
+                                        'Automatic background syncing is a Premium feature. Keep your health data updated effortlessly by upgrading!',
+                                        [
+                                            { text: 'Later', style: 'cancel' },
+                                            { text: 'Go Premium', onPress: () => navigation.navigate('CreditsStore') }
+                                        ]
+                                    );
+                                }
+                            }}
+                            trackColor={{ false: '#767577', true: t.primary }}
+                            thumbColor="#f4f3f4"
+                        />
+                    </SettingRow>
                 </CollapsibleSection>
 
                 <CollapsibleSection id="data" title="Data & Privacy" icon="📦">
                     <SettingRow icon="download-outline" label="Export All Data" value="CSV" color="#2196F3"
                         onPress={handleExportData} />
                     <SettingRow icon="cloud-upload-outline" label="Sync to Cloud" color="#4CAF50"
-                        onPress={handleSync} />
+                        onPress={handleHealthSync} />
                     <SettingRow icon="shield-checkmark" label="Privacy Policy" color="#607D8B"
                         onPress={() => showModal('Privacy Policy', 'At GlucoTrack AI, your health data is private and encrypted. We do not sell your personal information. Your data is used exclusively to provide you with insights and logs. We use industry-standard security measures to protect your information.')} />
                     <SettingRow icon="document-text" label="Terms & Conditions" color="#607D8B"

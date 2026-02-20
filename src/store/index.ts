@@ -71,13 +71,13 @@ export const useLogsStore = create<LogsState>()(
             setInsulinLogs: (logs) => set({ insulinLogs: logs }),
             setVitals: (vitals) => set({ vitals }),
             addGlucoseLog: (log) => set((state) => ({
-                glucoseLogs: [log, ...state.glucoseLogs]
+                glucoseLogs: [{ ...log, sync_status: log.sync_status || 'local' }, ...state.glucoseLogs]
             })),
             addCarbLog: (log) => set((state) => ({
-                carbLogs: [log, ...state.carbLogs]
+                carbLogs: [{ ...log, sync_status: log.sync_status || 'local' }, ...state.carbLogs]
             })),
             addInsulinLog: (log) => set((state) => ({
-                insulinLogs: [log, ...state.insulinLogs]
+                insulinLogs: [{ ...log, sync_status: log.sync_status || 'local' }, ...state.insulinLogs]
             })),
             addVital: (log) => set((state) => ({
                 vitals: [log, ...state.vitals]

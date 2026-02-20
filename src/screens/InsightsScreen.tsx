@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Typography, Spacing, BorderRadius, Shadow, getThemeColors } from '../constants/Theme';
 import { useLogsStore, useSettingsStore } from '../store';
+import { CartesianChart, Line, Area } from "victory-native";
 
 type TimePeriod = 7 | 14 | 30 | 90;
 
@@ -250,6 +251,23 @@ export const InsightsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         });
     }, [filteredGlucose]);
 
+    // ─── Chart Data (Daily Trend) ───────────────────────────────────────────
+    const dailyTrendData = useMemo(() => {
+        if (filteredGlucose.length === 0) return [];
+        const dailyMap: { [key: string]: number[] } = {};
+
+        filteredGlucose.forEach(l => {
+            const date = new Date(l.reading_time).toLocaleDateString([], { month: 'short', day: 'numeric' });
+            if (!dailyMap[date]) dailyMap[date] = [];
+            dailyMap[date].push(l.glucose_value);
+        });
+
+        return Object.entries(dailyMap).map(([day, values]) => ({
+            day,
+            value: Math.round(values.reduce((s, v) => s + v, 0) / values.length)
+        })).reverse(); // Oldest to newest
+    }, [filteredGlucose]);
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: t.background }]}>
             <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
@@ -317,6 +335,47 @@ export const InsightsScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
                         </View>
                     )}
                 </View>
+
+                {/* AI Trend Chart */}
+                {dailyTrendData.length > 1 && (
+                    <View style={[styles.chartCard, { backgroundColor: t.card, borderColor: t.border }]}>
+                        <View style={styles.chartHeader}>
+                            <Text style={[styles.cardTitle, { color: t.text }]}>Glucose Trends</Text>
+                            <Text style={[styles.cardSubtitle, { color: t.textTertiary }]}>Daily Average ({glucoseUnit})</Text>
+                        </View>
+                        <View style={{ height: 180, marginTop: Spacing.md }}>
+                            <CartesianChart
+                                data={dailyTrendData}
+                                xKey="day"
+                                yKeys={["value"]}
+                                domain={{ y: [Math.max(0, glucoseStats.min - 20), Math.min(400, glucoseStats.max + 20)] }}
+                                axisOptions={{
+                                    font: null as any,
+                                    tickCount: 5,
+                                    labelColor: t.textTertiary,
+                                    lineColor: t.border
+                                }}
+                            >
+                                {({ points, chartBounds }) => (
+                                    <>
+                                        <Area
+                                            points={points.value}
+                                            y0={chartBounds.bottom}
+                                            color={t.primary + '20'}
+                                            animate={{ type: "timing", duration: 500 }}
+                                        />
+                                        <Line
+                                            points={points.value}
+                                            color={t.primary}
+                                            strokeWidth={3}
+                                            animate={{ type: "timing", duration: 500 }}
+                                        />
+                                    </>
+                                )}
+                            </CartesianChart>
+                        </View>
+                    </View>
+                )}
 
                 {/* Time In Range Breakdown */}
                 <View style={[styles.rangeCard, { backgroundColor: t.card, borderColor: t.border }]}>
@@ -606,6 +665,9 @@ const styles = StyleSheet.create({
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     legendDot: { width: 8, height: 8, borderRadius: 4 },
     legendText: { fontSize: 10, fontWeight: '600' },
+    // Chart
+    chartCard: { padding: Spacing.xl, borderRadius: BorderRadius.xxl, borderWidth: 1, marginBottom: Spacing.xl, height: 280 },
+    chartHeader: { marginBottom: Spacing.sm },
     // Distribution
     distCard: { padding: Spacing.xl, borderRadius: BorderRadius.xxl, borderWidth: 1, marginBottom: Spacing.xl },
     distRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },

@@ -8,83 +8,96 @@ import {
     Alert,
     SafeAreaView,
     StatusBar,
+    ActivityIndicator,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../constants/Theme';
-import { useSubscriptionStore } from '../store';
+import { useSubscriptionStore, useAuthStore } from '../store';
+import { RevenueCatService } from '../services/revenuecat';
+import { PurchasesPackage } from 'react-native-purchases';
 
 export const CreditsStoreScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const {
         creditsRemaining,
         isPremium,
         setCredits,
-        setSubscription
+        setSubscription,
     } = useSubscriptionStore();
+    const { user } = useAuthStore();
 
-    const handleBuy = (amount: number, price: string) => {
-        Alert.alert(
-            'Confirm Purchase',
-            `Purchase ${amount.toLocaleString()} credits for ${price}?`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Confirm',
-                    onPress: () => {
-                        setCredits(creditsRemaining + amount);
-                        Alert.alert('Success', `${amount.toLocaleString()} credits added to your account!`);
-                    }
-                }
-            ]
-        );
+    const [packages, setPackages] = React.useState<PurchasesPackage[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        loadOfferings();
+    }, []);
+
+    const loadOfferings = async () => {
+        setLoading(true);
+        const available = await RevenueCatService.getOfferings();
+        setPackages(available);
+        setLoading(false);
     };
 
-    const handleSubscribe = () => {
-        Alert.alert(
-            'Go Premium',
-            'Upgrade to Premium for unlimited scans and advanced insights for $9.99/mo?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Upgrade',
-                    onPress: () => {
-                        setSubscription(true, -1, 'premium_monthly');
-                        Alert.alert('Welcome to Premium!', 'You now have unlimited access to all features.');
-                    }
-                }
-            ]
-        );
+    const handlePurchase = async (pack: PurchasesPackage) => {
+        if (!user) {
+            Alert.alert('Login Required', 'Please log in to make purchases.');
+            return;
+        }
+
+        const result = await RevenueCatService.purchasePackage(pack);
+        if (result.success) {
+            // Update store based on what was bought
+            const isSub = !!result.customerInfo?.entitlements.active['Premium'];
+            if (isSub) {
+                setSubscription(true, -1, 'premium');
+            } else {
+                // If it's a credit pack, we'd ideally have logic to parse product ID
+                // For now, let's use the UI amount as reference
+                setCredits(creditsRemaining + (pack.product.identifier.includes('500') ? 500 : 100));
+            }
+            Alert.alert('Success', 'Purchase completed successfully!');
+        } else if (result.error) {
+            Alert.alert('Error', result.error);
+        }
     };
 
-    const CreditOption = ({ amount, price, description, popular, discount }: any) => (
+    const handleRestore = async () => {
+        const result = await RevenueCatService.restorePurchases();
+        if (result.success) {
+            const isSub = !!result.customerInfo?.entitlements.active['Premium'];
+            setSubscription(isSub, isSub ? -1 : creditsRemaining, isSub ? 'premium' : 'free');
+            Alert.alert('Restored', 'Purchases restored successfully.');
+        } else {
+            Alert.alert('Error', result.error || 'Failed to restore purchases.');
+        }
+    };
+
+    const CreditOption = ({ pack, description, popular }: any) => (
         <TouchableOpacity
             style={[styles.optionCard, popular && styles.popularOption]}
-            onPress={() => handleBuy(amount, price)}
+            onPress={() => handlePurchase(pack)}
         >
             <View style={styles.optionLeft}>
                 <View style={styles.optionIconContainer}>
                     <MaterialCommunityIcons
-                        name={amount >= 2000 ? "lightning-bolt-circle" : "lightning-bolt"}
+                        name={pack.product.identifier.includes('premium') ? "star-circle" : "lightning-bolt"}
                         size={24}
                         color={Colors.primary}
                     />
                 </View>
                 <View style={styles.optionInfo}>
-                    <Text style={styles.optionAmount}>{amount.toLocaleString()} Credits</Text>
-                    <Text style={styles.optionDesc}>{description}</Text>
+                    <Text style={styles.optionAmount}>{pack.product.title}</Text>
+                    <Text style={styles.optionDesc}>{description || pack.product.description}</Text>
                 </View>
             </View>
             <View style={styles.optionRight}>
-                <Text style={styles.optionPrice}>{price}</Text>
-                <Text style={styles.buyNowText}>BUY NOW</Text>
+                <Text style={styles.optionPrice}>{pack.product.priceString}</Text>
+                <Text style={styles.buyNowText}>PURCHASE</Text>
             </View>
             {popular && (
                 <View style={styles.popularBadge}>
                     <Text style={styles.popularText}>POPULAR</Text>
-                </View>
-            )}
-            {discount && (
-                <View style={styles.discountBadge}>
-                    <Text style={styles.discountText}>SAVE {discount}</Text>
                 </View>
             )}
         </TouchableOpacity>
@@ -103,55 +116,80 @@ export const CreditsStoreScreen: React.FC<{ navigation: any }> = ({ navigation }
             </View>
 
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-                <View style={styles.planCard}>
-                    <Text style={styles.planLabel}>YOUR PLAN</Text>
-                    <View style={styles.planHeader}>
-                        <View>
-                            <Text style={styles.planTitle}>{isPremium ? 'Premium Plan' : 'Free Tier'}</Text>
-                            <Text style={styles.planSubtitle}>
-                                {isPremium
-                                    ? 'Enjoy unlimited AI scans and advanced features.'
-                                    : 'Upgrade to Premium for unlimited tracking and advanced AI insights.'}
-                            </Text>
-                        </View>
-                        <View style={styles.planIconCircle}>
-                            <MaterialCommunityIcons name="star-circle" size={32} color={Colors.primary} />
-                        </View>
+                {loading ? (
+                    <View style={{ height: 200, justifyContent: 'center' }}>
+                        <ActivityIndicator size="large" color={Colors.primary} />
                     </View>
+                ) : (
+                    <>
+                        <View style={styles.planCard}>
+                            <Text style={styles.planLabel}>UNLIMITED ACCESS</Text>
+                            <View style={styles.planHeader}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.planTitle}>{isPremium ? 'Premium Subscribed' : 'Get Full Control'}</Text>
+                                    <Text style={styles.planSubtitle}>
+                                        Unlock unlimited AI meal scans, advanced predictions, and comprehensive health reports.
+                                    </Text>
+                                </View>
+                                <View style={styles.planIconCircle}>
+                                    <MaterialCommunityIcons name="crown" size={36} color={Colors.primary} />
+                                </View>
+                            </View>
 
-                    {!isPremium && (
-                        <TouchableOpacity style={styles.subscribeButton} onPress={handleSubscribe}>
-                            <Text style={styles.subscribeButtonText}>Subscribe Now</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
+                            <View style={styles.trialBadge}>
+                                <MaterialCommunityIcons name="clock-check" size={14} color="#FFF" />
+                                <Text style={styles.trialText}>3-DAY FREE TRIAL ON ALL PLANS</Text>
+                            </View>
+                        </View>
 
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Purchase Credits</Text>
-                    <View style={styles.currentBadge}>
-                        <Text style={styles.currentText}>Current: {creditsRemaining}</Text>
-                    </View>
-                </View>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Select Your Plan</Text>
+                        </View>
 
-                <CreditOption
-                    amount={100}
-                    price="$4.99"
-                    description="Essential monitoring"
-                />
+                        {/* Subscription Plans */}
+                        {packages.filter(p => p.packageType === 'MONTHLY' || p.packageType === 'ANNUAL').map((p, i) => (
+                            <TouchableOpacity
+                                key={i}
+                                style={[styles.subscriptionCard, p.packageType === 'ANNUAL' && styles.popularOption]}
+                                onPress={() => handlePurchase(p)}
+                            >
+                                {p.packageType === 'ANNUAL' && (
+                                    <View style={styles.saveBadge}>
+                                        <Text style={styles.saveBadgeText}>SAVE 33%</Text>
+                                    </View>
+                                )}
+                                <View style={styles.subLeft}>
+                                    <Text style={styles.subType}>{p.packageType === 'ANNUAL' ? 'Yearly Access' : 'Monthly Access'}</Text>
+                                    <Text style={styles.subSubtitle}>
+                                        {p.packageType === 'ANNUAL' ? 'Only $0.22 per day' : 'Flexible monthly billing'}
+                                    </Text>
+                                </View>
+                                <View style={styles.subRight}>
+                                    <Text style={styles.subPrice}>{p.product.priceString}</Text>
+                                    <Text style={styles.subCycle}>{p.packageType === 'ANNUAL' ? '/year' : '/month'}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
 
-                <CreditOption
-                    amount={500}
-                    price="$19.99"
-                    description="Most active users"
-                    popular
-                />
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>One-Time Credits</Text>
+                            <View style={styles.currentBadge}>
+                                <Text style={styles.currentText}>Balance: {creditsRemaining}</Text>
+                            </View>
+                        </View>
 
-                <CreditOption
-                    amount={2000}
-                    price="$59.99"
-                    description="Power user bundle"
-                    discount="30%"
-                />
+                        {packages
+                            .filter(p => !['MONTHLY', 'ANNUAL'].includes(p.packageType))
+                            .map((p, i) => (
+                                <CreditOption
+                                    key={i}
+                                    pack={p}
+                                    popular={p.product.identifier.includes('500')}
+                                />
+                            ))
+                        }
+                    </>
+                )}
 
                 <View style={styles.footerInfo}>
                     <View style={styles.secureBox}>
@@ -160,7 +198,7 @@ export const CreditsStoreScreen: React.FC<{ navigation: any }> = ({ navigation }
                     </View>
 
                     <View style={styles.legalLinks}>
-                        <TouchableOpacity><Text style={styles.legalText}>RESTORE PURCHASES</Text></TouchableOpacity>
+                        <TouchableOpacity onPress={handleRestore}><Text style={styles.legalText}>RESTORE PURCHASES</Text></TouchableOpacity>
                         <View style={styles.legalDivider} />
                         <TouchableOpacity><Text style={styles.legalText}>TERMS OF SERVICE</Text></TouchableOpacity>
                         <View style={styles.legalDivider} />
@@ -407,5 +445,71 @@ const styles = StyleSheet.create({
         width: 1,
         height: 12,
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    subscriptionCard: {
+        backgroundColor: Colors.background.darkCard,
+        borderRadius: BorderRadius.xxl,
+        padding: Spacing.xl,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: Spacing.md,
+        borderWidth: 1,
+        borderColor: Colors.glass.border,
+    },
+    subLeft: {
+        gap: 4,
+    },
+    subType: {
+        fontSize: Typography.sizes.lg,
+        fontWeight: 'bold',
+        color: '#FFF',
+    },
+    subSubtitle: {
+        fontSize: Typography.sizes.xs,
+        color: Colors.text.onDark.tertiary,
+    },
+    subRight: {
+        alignItems: 'flex-end',
+    },
+    subPrice: {
+        fontSize: Typography.sizes.xl,
+        fontWeight: '900',
+        color: '#FFF',
+    },
+    subCycle: {
+        fontSize: 10,
+        color: Colors.text.onDark.tertiary,
+        fontWeight: 'bold',
+    },
+    saveBadge: {
+        position: 'absolute',
+        top: -10,
+        right: 20,
+        backgroundColor: '#1E8D55',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    saveBadgeText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#FFF',
+    },
+    trialBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
+        gap: 6,
+        alignSelf: 'flex-start',
+    },
+    trialText: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: '#FFF',
+        letterSpacing: 0.5,
     },
 });

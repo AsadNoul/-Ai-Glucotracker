@@ -12,14 +12,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Typography, Spacing, BorderRadius, Shadow, getThemeColors } from '../constants/Theme';
 import { useAuthStore, useLogsStore, useSubscriptionStore, useSettingsStore } from '../store';
 import { glucoseService } from '../services/supabase';
+import { AIService } from '../services/ai';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { ConnectionBanner } from '../components/ConnectionBanner';
+import { useNetwork } from '../hooks/useNetwork';
 
 
 export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const { user, isGuest } = useAuthStore();
     const { theme, waterIntake, addWater, waterGoal, carbGoal, targetGlucoseMin, targetGlucoseMax, glucoseUnit } = useSettingsStore();
     const { glucoseLogs, carbLogs, setGlucoseLogs } = useLogsStore();
-    const { creditsRemaining } = useSubscriptionStore();
+    const { isPremium, creditsRemaining } = useSubscriptionStore();
+    const { isOffline } = useNetwork();
     const [refreshing, setRefreshing] = useState(false);
 
     const t = getThemeColors(theme);
@@ -59,6 +63,13 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
         return valid.length > 0 ? Math.round(valid.reduce((s, v) => s + v, 0) / valid.length) : null;
     }, [weeklyData]);
 
+    // AI Prediction
+    const nextPrediction = useMemo(() => {
+        const recentReadings = glucoseLogs.slice(0, 5).map(l => ({ value: l.glucose_value, time: l.reading_time }));
+        const recentCarbs = carbLogs.slice(0, 5).map(l => ({ name: l.food_name, carbs: l.estimated_carbs, time: l.created_at }));
+        return AIService.predictNextReading(recentReadings, recentCarbs);
+    }, [glucoseLogs, carbLogs]);
+
     // Dynamic glucose status
     const glucoseStatus = useMemo(() => {
         if (latestGlucose === null) return { label: 'No Data', color: 'textTertiary', bgKey: 'glass' };
@@ -80,7 +91,7 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
     }, []);
 
     const loadDashboardData = async () => {
-        if (!user || isGuest) return;
+        if (!user || isGuest || isOffline) return;
         try {
             const logs = await glucoseService.getLogs(user.id, 30);
             setGlucoseLogs(logs);
@@ -126,9 +137,15 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
         return { emoji: '📊', title: 'Stay Consistent', text: 'Log your meals and readings regularly for more accurate AI predictions.', color: 'primary' };
     }, [glucoseLogs, carbLogs, targetGlucoseMin, targetGlucoseMax, carbGoal, weeklyAvg]);
 
+    // Advanced AI Insights from patterns
+    const aiPatterns = useMemo(() => {
+        return AIService.identifyPatterns(glucoseLogs, carbLogs);
+    }, [glucoseLogs, carbLogs]);
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: t.background }]}>
             <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
+            <ConnectionBanner />
 
             {/* Header */}
             <View style={styles.header}>
@@ -181,8 +198,32 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
                     </View>
                 </View>
 
-                {/* Glucose Card */}
+                {/* Main Prediction & Glucose Area */}
                 <View style={[styles.mainCard, { backgroundColor: t.card, borderColor: t.border }]}>
+                    {/* Prediction (Simplified & Integrated) */}
+                    {nextPrediction && (
+                        <View style={[styles.embeddedPrediction, { borderBottomColor: t.border }]}>
+                            <View style={styles.predictionIndicator}>
+                                <MaterialCommunityIcons name="auto-fix" size={14} color={t.primary} />
+                                <Text style={[styles.predictionText, { color: t.textSecondary }]}>AI Prediction: {nextPrediction.predictedValue} {glucoseUnit}</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={[styles.miniTrendBadge, { backgroundColor: isPremium ? t.primary + '20' : t.glass }]}
+                                onPress={() => !isPremium && navigation.navigate('CreditsStore')}
+                                activeOpacity={0.7}
+                            >
+                                <MaterialCommunityIcons
+                                    name={!isPremium ? 'lock' : (nextPrediction.trend === 'rising' ? 'trending-up' : nextPrediction.trend === 'falling' ? 'trending-down' : 'trending-neutral')}
+                                    size={12}
+                                    color={isPremium ? t.primary : t.textTertiary}
+                                />
+                                <Text style={[styles.miniTrendText, { color: isPremium ? t.primary : t.textTertiary }]}>
+                                    {isPremium ? nextPrediction.trend.toUpperCase() : 'PREMIUM'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
                     <View style={styles.cardHeader}>
                         <View style={styles.cardTitleRow}>
                             <MaterialCommunityIcons name="water" size={20} color={t.primary} />
@@ -223,6 +264,21 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
                     </View>
                     <Ionicons name="chevron-forward" size={18} color={t.textTertiary} />
                 </TouchableOpacity>
+
+                {/* Advanced AI Pattern Alerts */}
+                {aiPatterns.map((pattern, i) => (
+                    <View key={i} style={[styles.patternAlert, { backgroundColor: pattern.impact === 'high' ? '#FF525210' : '#FF980010', borderColor: pattern.impact === 'high' ? '#FF525230' : '#FF980030' }]}>
+                        <MaterialCommunityIcons
+                            name={pattern.type === 'trigger' ? 'alert-decagram' : 'brain'}
+                            size={24}
+                            color={pattern.impact === 'high' ? '#FF5252' : '#FF9800'}
+                        />
+                        <View style={{ flex: 1 }}>
+                            <Text style={[styles.patternTitle, { color: t.text }]}>{pattern.title}</Text>
+                            <Text style={[styles.patternDesc, { color: t.textSecondary }]}>{pattern.description}</Text>
+                        </View>
+                    </View>
+                ))}
 
                 <View style={styles.row}>
                     {/* Carb Progress */}
@@ -268,157 +324,60 @@ export const DashboardScreen: React.FC<{ navigation: any }> = ({ navigation }) =
                 </ScrollView>
 
                 {/* Quick Actions */}
+                {/* Quick Actions Grid */}
                 <Text style={[styles.sectionTitle, { color: t.textTertiary, marginTop: Spacing.xl }]}>QUICK ACTIONS</Text>
-                <View style={styles.actionsGrid}>
-                    <ActionItem
-                        icon="overscan"
-                        label="Scan Meal"
-                        onPress={() => navigation.navigate('ScanMeal')}
-                        color={t.primary}
-                        theme={t}
-                    />
-                    <ActionItem
-                        icon="add"
-                        label="Add Glucose"
-                        color={t.primary}
-                        isFab
-                        onPress={() => navigation.navigate('AddLog', { tab: 'glucose' })}
-                        theme={t}
-                    />
-                    <ActionItem
-                        icon="history"
-                        label="Logbook"
-                        color={t.primary}
-                        theme={t}
-                        onPress={() => navigation.navigate('Logbook')}
-                    />
-                    <ActionItem
-                        icon="pill"
-                        label="Medications"
-                        color="#7B61FF"
-                        theme={t}
-                        onPress={() => navigation.navigate('Medication')}
-                    />
-                </View>
-                <View style={styles.actionsGrid}>
-                    <ActionItem
-                        icon="run"
-                        label="Activity"
-                        color="#4CAF50"
-                        theme={t}
-                        onPress={() => navigation.navigate('Activity')}
-                    />
-                    <ActionItem
-                        icon="emoticon-happy"
-                        label="Wellness"
-                        color="#FF9800"
-                        theme={t}
-                        onPress={() => navigation.navigate('Mood')}
-                    />
-                    <ActionItem
-                        icon="book-open-variant"
-                        label="Learn"
-                        color="#00BCD4"
-                        theme={t}
-                        onPress={() => navigation.navigate('Education')}
-                    />
-                    <ActionItem
-                        icon="alert-circle"
-                        label="Emergency"
-                        color="#FF1744"
-                        theme={t}
-                        onPress={() => navigation.navigate('Emergency')}
-                    />
-                </View>
-                <View style={styles.actionsGrid}>
-                    <ActionItem
-                        icon="microphone"
-                        label="Voice Log"
-                        color="#9C27B0"
-                        theme={t}
-                        onPress={() => navigation.navigate('VoiceLog')}
-                    />
-                    <ActionItem
-                        icon="barcode-scan"
-                        label="Barcode"
-                        color="#795548"
-                        theme={t}
-                        onPress={() => navigation.navigate('BarcodeScan')}
-                    />
-                    <ActionItem
-                        icon="flask"
-                        label="A1C Report"
-                        color="#2196F3"
-                        theme={t}
-                        onPress={() => navigation.navigate('A1CReport')}
-                    />
-                    <ActionItem
-                        icon="file-document"
-                        label="Dr. Report"
-                        color="#009688"
-                        theme={t}
-                        onPress={() => navigation.navigate('DoctorReport')}
-                    />
-                </View>
-                <View style={styles.actionsGrid}>
-                    <ActionItem
-                        icon="needle"
-                        label="Insulin Calc"
-                        color="#E91E63"
-                        theme={t}
-                        onPress={() => navigation.navigate('InsulinCalculator')}
-                    />
-                    <ActionItem
-                        icon="trophy"
-                        label="Achievements"
-                        color="#FFD700"
-                        theme={t}
-                        onPress={() => navigation.navigate('Achievements')}
-                    />
-                    <ActionItem
-                        icon="heart-pulse"
-                        label="Vitals"
-                        color="#FF5252"
-                        theme={t}
-                        onPress={() => navigation.navigate('Vitals')}
-                    />
-                    <ActionItem
-                        icon="account-group"
-                        label="Caregivers"
-                        color="#3F51B5"
-                        theme={t}
-                        onPress={() => navigation.navigate('Caregiver')}
-                    />
+                <View style={[styles.actionsGrid, { paddingBottom: Spacing.xl }]}>
+                    <ActionItem icon="camera" label="Scan Meal" color={t.primary} theme={t} onPress={() => navigation.navigate('ScanMeal')} big />
+                    <ActionItem icon="history" label="Logbook" color={t.primary} theme={t} onPress={() => navigation.navigate('Logbook')} big />
+                    <ActionItem icon="pill" label="Meds" color="#7B61FF" theme={t} onPress={() => navigation.navigate('Medication')} />
+                    <ActionItem icon="run" label="Activity" color="#4CAF50" theme={t} onPress={() => navigation.navigate('Activity')} />
+                    <ActionItem icon="emoticon-happy" label="Wellness" color="#FF9800" theme={t} onPress={() => navigation.navigate('Mood')} />
+                    <ActionItem icon="microphone" label="Voice" color="#9C27B0" theme={t} onPress={() => navigation.navigate('VoiceLog')} />
+                    <ActionItem icon="barcode-scan" label="Barcode" color="#795548" theme={t} onPress={() => navigation.navigate('BarcodeScan')} />
+                    <ActionItem icon="flask" label="A1C" color="#2196F3" theme={t} onPress={() => navigation.navigate('A1CReport')} />
                 </View>
             </ScrollView>
         </SafeAreaView>
     );
 };
 
-const ActionItem = ({ icon, label, onPress, color, isFab, theme }: any) => {
+const ActionItem = ({ icon, label, onPress, color, isFab, theme, big }: any) => {
     const t = theme;
-    // Map legacy short names, pass all other MCIcon names directly
     const iconMap: Record<string, string> = {
         'overscan': 'scan-helper',
         'edit-calendar': 'note-edit-outline',
         'add': 'plus',
+        'camera': 'camera-outline',
+        'book': 'book-open-blank-variant',
+        'history': 'history'
     };
     const iconName = iconMap[icon] || icon;
+
     return (
-        <TouchableOpacity style={styles.actionContainer} onPress={onPress}>
+        <TouchableOpacity
+            style={[styles.actionContainer, big && styles.bigAction]}
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
             <View style={[
                 styles.actionIconCircle,
                 { backgroundColor: isFab ? t.primary : t.card },
                 isFab && Shadow.blue,
-                !isFab && { borderColor: t.border, borderWidth: 1 }
+                !isFab && { borderColor: t.border, borderWidth: 1 },
+                big && styles.bigIconCircle
             ]}>
                 <MaterialCommunityIcons
                     name={iconName as any}
-                    size={isFab ? 28 : 24}
+                    size={big ? 32 : (isFab ? 28 : 22)}
                     color={isFab ? '#FFF' : color || t.primary}
                 />
             </View>
-            <Text style={[styles.actionLabel, { color: t.textSecondary }]}>{label}</Text>
+            <Text
+                numberOfLines={1}
+                style={[styles.actionLabel, { color: t.textSecondary }, big && styles.bigActionLabel]}
+            >
+                {label}
+            </Text>
         </TouchableOpacity>
     );
 };
@@ -499,9 +458,44 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: Spacing.lg,
-        borderRadius: BorderRadius.xl,
+        borderRadius: 24,
         borderWidth: 1,
         marginBottom: Spacing.lg,
+    },
+    predictionCard: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: Spacing.lg,
+        borderRadius: BorderRadius.xl,
+        borderWidth: 1,
+        marginBottom: Spacing.md,
+    },
+    predictionInfo: {
+        gap: 2,
+    },
+    predictionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    predictionLabel: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        letterSpacing: 0.5,
+    },
+    predictionBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#FFF',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    predictionBadgeText: {
+        fontSize: 9,
+        fontWeight: 'bold',
     },
     trendInfo: {
         gap: 2,
@@ -530,7 +524,7 @@ const styles = StyleSheet.create({
         borderRadius: 3,
     },
     mainCard: {
-        borderRadius: BorderRadius.xxl,
+        borderRadius: 28, // High-premium rounded corners
         padding: Spacing.xl,
         marginBottom: Spacing.lg,
         borderWidth: 1,
@@ -615,7 +609,7 @@ const styles = StyleSheet.create({
     },
     compactCard: {
         padding: Spacing.lg,
-        borderRadius: BorderRadius.xl,
+        borderRadius: 24,
         borderWidth: 1,
         alignItems: 'center',
         ...Shadow.light,
@@ -692,26 +686,40 @@ const styles = StyleSheet.create({
     },
     actionsGrid: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-start',
+        gap: 12,
     },
     actionContainer: {
         alignItems: 'center',
         width: '22%',
+        marginBottom: Spacing.md,
+    },
+    bigAction: {
+        width: '47.8%',
     },
     actionIconCircle: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 52,
+        height: 52,
+        borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: Spacing.sm,
-        ...Shadow.light,
+        marginBottom: 8,
+    },
+    bigIconCircle: {
+        width: '100%',
+        height: 70,
+        borderRadius: 24,
     },
     actionLabel: {
-        fontSize: Typography.sizes.xs + 1,
-        fontWeight: Typography.weights.medium,
+        fontSize: 11,
+        fontWeight: '600',
         textAlign: 'center',
+    },
+    bigActionLabel: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        marginTop: 2,
     },
     insightCard: {
         flexDirection: 'row',
@@ -735,6 +743,54 @@ const styles = StyleSheet.create({
     },
     insightText: {
         fontSize: Typography.sizes.sm,
+        lineHeight: 18,
+    },
+    embeddedPrediction: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingBottom: 12,
+        marginBottom: 16,
+        borderBottomWidth: 1,
+    },
+    predictionIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    predictionText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        letterSpacing: 0.3,
+    },
+    miniTrendBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+    },
+    miniTrendText: {
+        fontSize: 9,
+        fontWeight: '900',
+    },
+    patternAlert: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: Spacing.lg,
+        borderRadius: BorderRadius.xl,
+        borderWidth: 1,
+        marginBottom: Spacing.lg,
+        gap: Spacing.md,
+    },
+    patternTitle: {
+        fontSize: Typography.sizes.md,
+        fontWeight: 'bold',
+        marginBottom: 2,
+    },
+    patternDesc: {
+        fontSize: 12,
         lineHeight: 18,
     },
 });

@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Spacing, BorderRadius, Shadow, getThemeColors } from '../constants/Theme';
 
-import { useSettingsStore, useLogsStore, useMedicationStore, useActivityStore, useMoodStore } from '../store';
+import { useSettingsStore, useLogsStore, useMedicationStore, useActivityStore, useMoodStore, useSubscriptionStore } from '../store';
 
 export const DoctorReportScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const { theme, glucoseUnit, targetGlucoseMin, targetGlucoseMax } = useSettingsStore();
@@ -115,6 +115,18 @@ export const DoctorReportScreen: React.FC<{ navigation: any }> = ({ navigation }
     };
 
     const handleShare = async () => {
+        const { isPremium } = useSubscriptionStore.getState();
+        if (!isPremium) {
+            Alert.alert(
+                'Premium Feature',
+                'Generation of detailed doctor reports is a Premium feature. Share your progress with ease by upgrading!',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'View Plans', onPress: () => navigation.navigate('CreditsStore') }
+                ]
+            );
+            return;
+        }
 
         try {
             const report = generateReportText();

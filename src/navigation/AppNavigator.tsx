@@ -6,6 +6,7 @@ import { SplashScreen } from '../screens/SplashScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
+import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { AddLogScreen } from '../screens/AddLogScreen';
 import { InsightsScreen } from '../screens/InsightsScreen';
@@ -26,6 +27,7 @@ import { AchievementsScreen } from '../screens/AchievementsScreen';
 import { VitalsScreen } from '../screens/VitalsScreen';
 import { CaregiverScreen } from '../screens/CaregiverScreen';
 import { BarcodeScanScreen } from '../screens/BarcodeScanScreen';
+import { AdminPanelScreen } from '../screens/AdminPanelScreen';
 import { Colors, Shadow, getThemeColors } from '../constants/Theme';
 import { useSettingsStore } from '../store';
 
@@ -103,8 +105,12 @@ const MainTabs = () => {
     );
 };
 
+import { useSync } from '../hooks/useSync';
+
 // Root Navigator
 export const AppNavigator = () => {
+    useSync(); // Initialize background sync
+
     return (
         <Stack.Navigator
             screenOptions={{
@@ -117,6 +123,7 @@ export const AppNavigator = () => {
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
             <Stack.Screen name="MainTabs" component={MainTabs} />
             <Stack.Screen name="CreditsStore" component={CreditsStoreScreen} />
             <Stack.Screen name="ScanMeal" component={ScanMealScreen} options={{ animation: 'fade_from_bottom' }} />
@@ -134,6 +141,7 @@ export const AppNavigator = () => {
             <Stack.Screen name="Vitals" component={VitalsScreen} />
             <Stack.Screen name="Caregiver" component={CaregiverScreen} />
             <Stack.Screen name="BarcodeScan" component={BarcodeScanScreen} />
+            <Stack.Screen name="AdminPanel" component={AdminPanelScreen} />
         </Stack.Navigator>
     );
 };

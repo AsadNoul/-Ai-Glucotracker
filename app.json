@@ -17,7 +17,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.glucotrack.ai",
+      "bundleIdentifier": "com.aiglucotrack.naulx",
       "infoPlist": {
         "NSCameraUsageDescription": "GlucoTrack AI needs camera access to scan food for carb estimation",
         "NSPhotoLibraryUsageDescription": "GlucoTrack AI needs photo library access to select food images",
@@ -30,7 +30,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0A0B0F"
       },
-      "package": "com.glucotrack.ai",
+      "package": "com.aiglucotrack.naulx",
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",

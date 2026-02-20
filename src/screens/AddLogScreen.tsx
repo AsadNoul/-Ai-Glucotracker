@@ -16,6 +16,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Typography, Spacing, BorderRadius, Shadow, getThemeColors } from '../constants/Theme';
 import { useAuthStore, useLogsStore, useSubscriptionStore, useSettingsStore } from '../store';
+import { glucoseService, carbService, insulinService } from '../services/supabase';
+import { ConnectionBanner } from '../components/ConnectionBanner';
+import { useNetwork } from '../hooks/useNetwork';
 
 type TabType = 'carbs' | 'glucose' | 'insulin';
 
@@ -108,7 +111,7 @@ const getGILevel = (gi: number) => {
 };
 
 export const AddLogScreen: React.FC<{ navigation: any; route: any }> = ({ navigation, route }) => {
-    const { user } = useAuthStore();
+    const { user, isGuest } = useAuthStore();
     const { theme, targetGlucoseMin, targetGlucoseMax, glucoseUnit } = useSettingsStore();
     const { addGlucoseLog, addCarbLog, addInsulinLog, glucoseLogs, carbLogs } = useLogsStore();
     const { creditsRemaining, decrementCredit } = useSubscriptionStore();
@@ -228,11 +231,16 @@ export const AddLogScreen: React.FC<{ navigation: any; route: any }> = ({ naviga
     }, [route.params]);
 
     // ─── Save Handler ───────────────────────────────────────────────────────
+    const { isOffline } = useNetwork();
     const handleSave = async () => {
         if (loading) return;
         setLoading(true);
 
+        const current_sync_status = isOffline ? 'local' : 'synced';
+
         try {
+            const userId = user?.id || 'guest';
+
             if (activeTab === 'carbs') {
                 if (!foodName || !carbs) throw new Error('Please fill food name and carbs');
                 if (creditsRemaining <= 0) {
@@ -245,17 +253,30 @@ export const AddLogScreen: React.FC<{ navigation: any; route: any }> = ({ naviga
                 }
 
                 const totalCarbs = Math.round(parseInt(carbs) * parseFloat(servings || '1'));
-                addCarbLog({
+                const newLog = {
                     id: Date.now().toString(),
-
-                    user_id: user?.id || 'guest',
+                    user_id: userId,
                     food_name: foodName,
                     estimated_carbs: totalCarbs,
-                    created_at: new Date().toISOString()
-                });
+                    created_at: new Date().toISOString(),
+                    sync_status: current_sync_status as any
+                };
+
+                // Save to cloud if online and not guest
+                if (!isOffline && !isGuest) {
+                    try {
+                        await carbService.addLog(userId, foodName, totalCarbs);
+                        newLog.sync_status = 'synced';
+                    } catch (e) {
+                        console.warn('Cloud save failed, saving locally:', e);
+                        newLog.sync_status = 'local';
+                    }
+                }
+
+                addCarbLog(newLog);
                 decrementCredit();
 
-                // AI Glycemic Impact Alert for notable meals
+                // AI Glycemic Impact Alert
                 if (totalCarbs >= 15) {
                     const impact = getGlycemicImpact(foodName, totalCarbs, selectedGI);
                     setTimeout(() => {
@@ -271,29 +292,60 @@ export const AddLogScreen: React.FC<{ navigation: any; route: any }> = ({ naviga
                 }
             } else if (activeTab === 'glucose') {
                 if (!glucoseValue) throw new Error('Please enter glucose value');
-                addGlucoseLog({
-                    id: Date.now().toString(),
+                const val = parseInt(glucoseValue);
+                const time = new Date().toISOString();
 
-                    user_id: user?.id || 'guest',
-                    glucose_value: parseInt(glucoseValue),
-                    reading_time: new Date().toISOString(),
-                    created_at: new Date().toISOString()
-                });
-            } else {
+                const newLog = {
+                    id: Date.now().toString(),
+                    user_id: userId,
+                    glucose_value: val,
+                    reading_time: time,
+                    created_at: time,
+                    sync_status: current_sync_status as any
+                };
+
+                if (!isOffline && !isGuest) {
+                    try {
+                        await glucoseService.addLog(userId, val, time);
+                        newLog.sync_status = 'synced';
+                    } catch (e) {
+                        console.warn('Cloud save failed, saving locally:', e);
+                        newLog.sync_status = 'local';
+                    }
+                }
+
+                addGlucoseLog(newLog);
+            } else if (activeTab === 'insulin') {
                 if (!insulinUnits) throw new Error('Please enter insulin units');
-                addInsulinLog({
-                    id: Date.now().toString(),
+                const units = parseFloat(insulinUnits);
+                const time = new Date().toISOString();
 
-                    user_id: user?.id || 'guest',
-                    units: parseFloat(insulinUnits),
+                const newLog = {
+                    id: Date.now().toString(),
+                    user_id: userId,
+                    units: units,
                     type: insulinType,
-                    timestamp: new Date().toISOString(),
-                    created_at: new Date().toISOString()
-                });
+                    timestamp: time,
+                    created_at: time,
+                    sync_status: current_sync_status as any
+                };
+
+                if (!isOffline && !isGuest) {
+                    try {
+                        await insulinService.addLog(userId, units, insulinType, time);
+                        newLog.sync_status = 'synced';
+                    } catch (e) {
+                        console.warn('Cloud save failed, saving locally:', e);
+                        newLog.sync_status = 'local';
+                    }
+                }
+
+                addInsulinLog(newLog);
             }
 
-            Alert.alert('Success', 'Log saved successfully!');
+            Alert.alert('Success', current_sync_status === 'synced' ? 'Log synced to cloud!' : 'Log saved locally!');
             navigation.goBack();
+
         } catch (error: any) {
             Alert.alert('Error', error.message);
         } finally {
@@ -328,6 +380,7 @@ export const AddLogScreen: React.FC<{ navigation: any; route: any }> = ({ naviga
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: t.background }]}>
             <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
+            <ConnectionBanner />
 
             {/* Header */}
             <View style={styles.header}>
